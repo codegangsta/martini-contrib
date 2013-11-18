@@ -9,7 +9,7 @@ go get github.com/codegangsta/martini-contrib
 
 Join the [Mailing list](https://groups.google.com/forum/#!forum/martini-go)
 
-## Components
+## Available Components
 * [auth](http://godoc.org/github.com/codegangsta/martini-contrib/auth) - Handlers for authentication.
 * [form](http://godoc.org/github.com/codegangsta/martini-contrib/form) - Handler for parsing and mapping form fields.
 
