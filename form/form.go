@@ -6,7 +6,7 @@
 //
 //  import (
 //     "github.com/codegangsta/martini"
-//     "github.com/codegangsta/martini/form"
+//     "github.com/codegangsta/martini-contrib/form"
 //   )
 //
 //  type BlogPost struct{
