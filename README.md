@@ -1,4 +1,4 @@
-# Contributed Martini Handlers and Utilities
+# Contributed Martini Handlers and Utilities [![Build Status](https://drone.io/github.com/codegangsta/martini-contrib/status.png)](https://drone.io/github.com/codegangsta/martini-contrib/latest)
 
 This package includes a variety of add-on components for Martini, a classy web framework for Go:
 
