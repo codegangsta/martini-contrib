@@ -32,6 +32,9 @@ type BlogPost struct {
 }
 
 func (this *BlogPost) ValidateTitle() string {
+	if len(this.Title) < 4 {
+		return "Too short"
+	}
 	return ""
 }
 

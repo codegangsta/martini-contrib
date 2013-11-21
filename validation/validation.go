@@ -19,7 +19,7 @@ func Validate(obj interface{}) martini.Handler {
 		for i := 0; i < typ.NumField(); i++ {
 			field := typ.Field(i)
 			validateMethod := val.MethodByName("Validate" + field.Name)
-			if validateMethod == reflect.Zero(reflect.TypeOf(validateMethod)) {
+			if !validateMethod.IsValid() {
 				continue
 			}
 
