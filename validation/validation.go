@@ -7,10 +7,6 @@ import (
 	"strings"
 )
 
-func tester() string {
-	return "blah"
-}
-
 func Validate(obj interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
 		typ := reflect.TypeOf(obj).Elem()
