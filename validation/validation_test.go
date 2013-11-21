@@ -8,19 +8,29 @@ import (
 )
 
 func TestValidateBlogPosts(t *testing.T) {
-	recorder := httptest.NewRecorder()
-	handler := func(errors Errors) {
+	handlerMustErr := func(errors Errors) {
 		if len(errors) == 0 {
-			t.Error("Expected at least one error")
+			t.Error("Expected at least one error, got 0")
+		}
+	}
+	handlerNoErr := func(errors Errors) {
+		if len(errors) > 0 {
+			t.Error("Expected no errors, got", len(errors))
 		}
 	}
 
+	performValidationTest(&BlogPost{"", "..."}, handlerMustErr, t)
+	performValidationTest(&BlogPost{"Good Title", "Good content"}, handlerNoErr, t)
+}
+
+func performValidationTest(post *BlogPost, handler func(Errors), t *testing.T) {
+	recorder := httptest.NewRecorder()
 	m := martini.Classic()
-	m.Get(route, Validate(&BlogPost{"", "..."}), handler)
+	m.Get(route, Validate(post), handler)
 
 	req, err := http.NewRequest("GET", route, nil)
 	if err != nil {
-		t.Error(err)
+		t.Error("HTTP error:", err)
 	}
 
 	m.ServeHTTP(recorder, req)
@@ -31,9 +41,15 @@ type BlogPost struct {
 	Content string
 }
 
-func (this *BlogPost) ValidateTitle() string {
+func (this *BlogPost) ValidateBlogPost() string {
 	if len(this.Title) < 4 {
-		return "Too short"
+		return "Title too short"
+	}
+	if len(this.Content) > 1024 {
+		return "Content too long"
+	}
+	if len(this.Content) < 10 {
+		return "Content too short"
 	}
 	return ""
 }

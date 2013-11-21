@@ -4,6 +4,7 @@ import (
 	"github.com/codegangsta/martini"
 	"net/http"
 	"reflect"
+	"strings"
 )
 
 func tester() string {
@@ -16,15 +17,11 @@ func Validate(obj interface{}) martini.Handler {
 		val := reflect.ValueOf(obj)
 		errors := make(Errors)
 
-		for i := 0; i < typ.NumField(); i++ {
-			field := typ.Field(i)
-			validateMethod := val.MethodByName("Validate" + field.Name)
-			if !validateMethod.IsValid() {
-				continue
-			}
+		structName := strings.Split(typ.String(), ".")[1]
+		validateMethod := val.MethodByName("Validate" + structName)
 
+		if validateMethod.IsValid() {
 			validationResult := validateMethod.Call([]reflect.Value{})[0].String()
-
 			if validationResult != "" {
 				errors[validateMethod.String()] = validationResult
 			}
