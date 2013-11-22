@@ -12,6 +12,7 @@ Join the [Mailing list](https://groups.google.com/forum/#!forum/martini-go)
 ## Available Components
 * [auth](http://godoc.org/github.com/codegangsta/martini-contrib/auth) - Handlers for authentication.
 * [form](http://godoc.org/github.com/codegangsta/martini-contrib/form) - Handler for parsing and mapping form fields.
+* [gzip](http://godoc.org/github.com/codegangsta/martini-contrib/gzip) - Handler for adding gzip compress to requests
 
 ## Examples
 Want to post an example to put on the readme? Put up a Pull Request!
