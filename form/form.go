@@ -17,7 +17,7 @@
 //  func main() {
 //    m := martini.Classic()
 //
-//    m.Get("/",form.Form(&BlogPost{}) func(blogpost *BlogPost) string {
+//    m.Get("/", form.Form(&BlogPost{}), func(blogpost *BlogPost) string {
 //      return blogpost.Title
 //    })
 //
