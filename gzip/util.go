@@ -2,6 +2,7 @@ package gzip
 
 import (
 	"compress/gzip"
+	"github.com/codegnagsta/martini"
 	"net/http"
 )
 
@@ -14,7 +15,7 @@ const (
 
 type gzipResponseWriter struct {
 	*gzip.Writer
-	w http.ResponseWriter
+	w martini.ResponseWriter
 }
 
 func (grw gzipResponseWriter) Header() http.Header {
