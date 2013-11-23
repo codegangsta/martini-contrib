@@ -19,7 +19,7 @@ Want to post an example to put on the readme? Put up a Pull Request!
 
 ### Accept-Language HTTP header parsing
 
-Using the `acceptlang` handler(s) you can automatically parse the `Accept-Language` HTTP header and expose it as a `AcceptLanguages` struct. To
+Using the `acceptlang` handler(s) you can automatically parse the `Accept-Language` HTTP header and expose it as an `AcceptLanguages` struct. To
 use it, you add a handler to your handler chain using the `Languages()` function and define a dependency:
 
 ```go
@@ -28,7 +28,7 @@ m.Get("/", Languages(), func(languages AcceptLanguages) {
 })
 ```
 
-The handler implementation respects the complete [HTTP 1.1 Accept-Language](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.4) specification.
+The handler implementation respects the [HTTP/1.1 Accept-Language](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.4) specification.
 
 ## Contributing
 Feel free to submit patches or file issues via GitHub. If you have an idea for a handler put up a Pull Request and we will find where it fits best!
