@@ -1,6 +1,8 @@
 # auth
 Martini middleware/handler for http basic authentication.
 
+[API Reference](http://godoc.org/github.com/codegangsta/martini-contrib/auth)
+
 ## Usage
 
 ~~~ go
