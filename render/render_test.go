@@ -13,7 +13,7 @@ type Greeting struct {
 
 func Test_Render_JSON(t *testing.T) {
 	res := httptest.NewRecorder()
-	r := renderer{res}
+	r := renderer{res, nil}
 	r.JSON(300, Greeting{"hello", "world"})
 	expect(t, res.Code, 300)
 	expect(t, res.Body.String(), `{"one":"hello","two":"world"}`)
