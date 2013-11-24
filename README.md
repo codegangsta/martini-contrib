@@ -10,9 +10,9 @@ go get github.com/codegangsta/martini-contrib
 Join the [Mailing list](https://groups.google.com/forum/#!forum/martini-go)
 
 ## Available Components
-* [auth](http://godoc.org/github.com/codegangsta/martini-contrib/auth) - Handlers for authentication.
-* [form](http://godoc.org/github.com/codegangsta/martini-contrib/form) - Handler for parsing and mapping form fields.
-* [gzip](http://godoc.org/github.com/codegangsta/martini-contrib/gzip) - Handler for adding gzip compress to requests
+* [auth](https://github.com/codegangsta/martini-contrib/tree/master/auth) - Handlers for authentication.
+* [form](https://github.com/codegangsta/martini-contrib/tree/master/form) - Handler for parsing and mapping form fields.
+* [gzip](https://github.com/codegangsta/martini-contrib/tree/master/gzip) - Handler for adding gzip compress to requests
 
 ## Contributing
 Feel free to submit patches or file issues via GitHub. If you have an idea for a handler put up a Pull Request and we will find where it fits best!
