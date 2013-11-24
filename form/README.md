@@ -1,6 +1,8 @@
 # form
 POST form parser/handler for Martini.
 
+[API Reference](http://godoc.org/github.com/codegangsta/martini-contrib/form)
+
 ## Description
 form provides a convenient way to map http POST forms to struct fields. form will conveniently inject the given struct as a service for subsequent handlers.
 
