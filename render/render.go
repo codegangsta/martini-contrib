@@ -11,13 +11,13 @@ const (
 	ContentJSON = "application/json"
 )
 
-type Renderer interface {
+type Render interface {
 	JSON(status int, v interface{})
 }
 
-func Render() martini.Handler {
+func Renderer() martini.Handler {
 	return func(res http.ResponseWriter, c martini.Context) {
-		c.MapTo(&renderer{res}, (*Renderer)(nil))
+		c.MapTo(&renderer{res}, (*Render)(nil))
 	}
 }
 
