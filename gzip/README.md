@@ -1,6 +1,8 @@
 # gzip
 Gzip middleware for Martini.
 
+[API Reference](http://godoc.org/github.com/codegangsta/martini-contrib/gzip)
+
 ## Usage
 
 ~~~ go
