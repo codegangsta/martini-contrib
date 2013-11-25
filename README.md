@@ -13,6 +13,7 @@ Join the [Mailing list](https://groups.google.com/forum/#!forum/martini-go)
 * [auth](https://github.com/codegangsta/martini-contrib/tree/master/auth) - Handlers for authentication.
 * [form](https://github.com/codegangsta/martini-contrib/tree/master/form) - Handler for parsing and mapping form fields.
 * [gzip](https://github.com/codegangsta/martini-contrib/tree/master/gzip) - Handler for adding gzip compress to requests
+* [render](https://github.com/codegangsta/martini-contrib/tree/master/render) - Handler that provides a service for easily rendering JSON and HTML templates.
 
 ## Contributing
 Feel free to submit patches or file issues via GitHub. If you have an idea for a handler put up a Pull Request and we will find where it fits best!
