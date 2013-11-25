@@ -4,9 +4,10 @@ Martini middleware/handler for easily rendering serialized JSON and HTML templat
 [API Reference](http://godoc.org/github.com/codegangsta/martini-contrib/render)
 
 ## Usage
+render uses Go's [html/template](http://golang.org/pkg/html/template/) package to render html templates.
 
-main.go
 ~~~ go
+// main.go
 package main
 
 import (
@@ -28,8 +29,8 @@ func main() {
 
 ~~~
 
-templates/hello.tmpl
-~~~ go
+~~~ html
+<!-- templates/hello.tmpl -->
 <h2>Hello {{.}}!</h2>
 ~~~
 
