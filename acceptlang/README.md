@@ -12,10 +12,12 @@ For more information:
 ## Installation
 
 * Install the `acceptlang` package:
-    go get github.com/codegangsta/martini-contrib/acceptlang
 
-* Import the `acceptlang` package in your code:
-    import github.com/codegangsta/martini-contrib/acceptlang
+        go get github.com/codegangsta/martini-contrib/acceptlang
+
+* Import the `acceptlang` package in your Go code:
+
+        import "github.com/codegangsta/martini-contrib/acceptlang"
 
 ## Usage
 
