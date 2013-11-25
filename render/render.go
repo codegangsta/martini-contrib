@@ -22,9 +22,10 @@ type Render interface {
 func Renderer(dir string) martini.Handler {
 	t := compile(dir)
 	return func(res http.ResponseWriter, c martini.Context) {
-    if true {
-      t = compile(dir)
-    }
+		// recompile for easy development
+		if martini.Env == martini.Dev {
+			t = compile(dir)
+		}
 		c.MapTo(&renderer{res, t}, (*Render)(nil))
 	}
 }
