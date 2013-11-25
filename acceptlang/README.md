@@ -1,4 +1,4 @@
-# Martini Accept-Language HTTP header parsing handler
+# Accept-Language HTTP header parsing
 
 ## Introduction
 
