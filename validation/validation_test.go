@@ -41,17 +41,20 @@ type BlogPost struct {
 	Content string
 }
 
-func (this *BlogPost) ValidateBlogPost() string {
-	if len(this.Title) < 4 {
-		return "Title too short"
+func (this *BlogPost) Validate() Errors {
+	errs := make(Errors)
+
+	if len(this.Title) < 10 {
+		errs["Title"] = "Title too short"
 	}
 	if len(this.Content) > 1024 {
-		return "Content too long"
+		errs["Content"] = "Content too long"
 	}
 	if len(this.Content) < 10 {
-		return "Content too short"
+		errs["Content"] = "Content too short"
 	}
-	return ""
+
+	return errs
 }
 
 const route = "/blogposts/create"
