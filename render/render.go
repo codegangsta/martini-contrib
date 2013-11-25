@@ -58,6 +58,7 @@ func (r *renderer) JSON(status int, v interface{}) {
 
 func (r *renderer) HTML(status int, name string, binding interface{}) {
 	r.Header().Set(ContentType, ContentHTML)
+	r.WriteHeader(status)
 	err := r.t.ExecuteTemplate(r, name, binding)
 	if err != nil {
 		http.Error(r, err.Error(), 500)
