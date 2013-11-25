@@ -47,7 +47,7 @@ func TestAcceptLanguageTests(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		r, _ := http.NewRequest("GET", test.path, nil)
 		if test.header != "" {
-			r.Header.Add(ACCEPT_LANGUAGE_HEADER, test.header)
+			r.Header.Add(acceptLanguageHeader, test.header)
 		}
 		m.ServeHTTP(recorder, r)
 	}
@@ -58,7 +58,7 @@ func BenchmarkLanguages1(b *testing.B) {
 
 	recorder := httptest.NewRecorder()
 	r, _ := http.NewRequest("GET", "/benchmark", nil)
-	r.Header.Add(ACCEPT_LANGUAGE_HEADER, "en-us;q=0.7")
+	r.Header.Add(acceptLanguageHeader, "en-us;q=0.7")
 
 	for n := 0; n < b.N; n++ {
 		m.ServeHTTP(recorder, r)
@@ -70,7 +70,7 @@ func BenchmarkLanguages6(b *testing.B) {
 
 	recorder := httptest.NewRecorder()
 	r, _ := http.NewRequest("GET", "/benchmark", nil)
-	r.Header.Add(ACCEPT_LANGUAGE_HEADER, "en-us;q=0.7, en-GB;q=0.8, de;q=1, nl;q=0.1, fr-FR;q=0.3, es")
+	r.Header.Add(acceptLanguageHeader, "en-us;q=0.7, en-GB;q=0.8, de;q=1, nl;q=0.1, fr-FR;q=0.3, es")
 
 	for n := 0; n < b.N; n++ {
 		m.ServeHTTP(recorder, r)
