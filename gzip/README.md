@@ -13,7 +13,7 @@ import (
 
 func main() {
   m := martini.Classic()
-  // authenticate every request
+  // gzip every request
   m.Use(gzip.All())
   m.Run()
 }
