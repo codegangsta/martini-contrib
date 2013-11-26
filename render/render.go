@@ -12,7 +12,7 @@
 //    m.Use(render.Renderer("templates"))
 //
 //    m.Get("/html", func(r render.Render) {
-//      r.HTML(200, "mytemplate.tmpl", nil)
+//      r.HTML(200, "mytemplate", nil)
 //    })
 //
 //    m.Get("/json", func(r render.Render) {
@@ -27,7 +27,9 @@ import (
 	"encoding/json"
 	"github.com/codegangsta/martini"
 	"html/template"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 )
 
@@ -63,11 +65,30 @@ func Renderer(dir string) martini.Handler {
 }
 
 func compile(dir string) *template.Template {
-	t, err := template.ParseGlob(filepath.Join(dir, "*.tmpl"))
-	if err != nil {
-		// do nothing for now?
-		t = template.New("null")
-	}
+	t := template.New(dir)
+
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		r, err := filepath.Rel(dir, path)
+		if err != nil {
+			return err
+		}
+
+		ext := filepath.Ext(r)
+		if ext == ".tmpl" {
+
+			buf, err := ioutil.ReadFile(path)
+			if err != nil {
+				panic(err)
+			}
+
+			name := (r[0 : len(r)-len(ext)])
+			tmpl := t.New(name)
+			template.Must(tmpl.Parse(string(buf)))
+		}
+
+		return nil
+	})
+
 	return t
 }
 
