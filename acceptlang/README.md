@@ -13,19 +13,23 @@ Simply add a new handler function instance to your handler chain using the `acce
 For example:
 
 ```go
+package main
+
 import (
-  "github.com/codegangsta/martini"
-  "github.com/codegangsta/martini-contrib/acceptlang"
+	"fmt"
+	"github.com/codegangsta/martini"
+	"github.com/codegangsta/martini-contrib/acceptlang"
+	"net/http"
 )
 
 func main() {
-    m := martini.Classic()
+	m := martini.Classic()
 
-    m.Get("/", acceptlang.Languages(), func(languages acceptlang.AcceptLanguages) string {
-        return fmt.Sprintf("Languages: %s", languages)
-    })
+	m.Get("/", acceptlang.Languages(), func(languages acceptlang.AcceptLanguages) string {
+		return fmt.Sprintf("Languages: %s", languages)
+	})
 
-    http.ListenAndServe(":8090", m)
+	http.ListenAndServe(":8090", m)
 }
 ```
 
