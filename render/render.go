@@ -46,6 +46,8 @@ type Render interface {
 	JSON(status int, v interface{})
 	// HTML renders a html template specified by the name and writes the result and given status to the http.ResponseWriter.
 	HTML(status int, name string, v interface{})
+  // Error is a convenience function that writes an http status and message to the http.ResponseWriter.
+  Error(status int, message string)
 }
 
 // Renderer is a Middleware that maps a render.Render service into the Martini handler chain. Renderer will compile templates
@@ -117,4 +119,9 @@ func (r *renderer) HTML(status int, name string, binding interface{}) {
 	if err != nil {
 		http.Error(r, err.Error(), 500)
 	}
+}
+
+func (r *renderer) Error(status int, message string) {
+  r.WriteHeader(status)
+  r.Write([]byte(message))
 }

@@ -19,6 +19,22 @@ func Test_Render_JSON(t *testing.T) {
 	expect(t, res.Body.String(), `{"one":"hello","two":"world"}`)
 }
 
+func Test_Render_Error404(t *testing.T) {
+	res := httptest.NewRecorder()
+	r := renderer{res, nil}
+	r.Error(404, "Resource not found")
+	expect(t, res.Code, 404)
+	expect(t, res.Body.String(), "Resource not found")
+}
+
+func Test_Render_Error500(t *testing.T) {
+	res := httptest.NewRecorder()
+	r := renderer{res, nil}
+	r.Error(500, "")
+	expect(t, res.Code, 500)
+	expect(t, res.Body.String(), "")
+}
+
 /* Test Helpers */
 func expect(t *testing.T, a interface{}, b interface{}) {
 	if a != b {
