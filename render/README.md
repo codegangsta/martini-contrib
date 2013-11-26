@@ -21,7 +21,7 @@ func main() {
   m.Use(render.Renderer("templates")) 
 
   m.Get("/", func(r render.Render) {
-    r.HTML(200, "hello.tmpl", "jeremy")
+    r.HTML(200, "hello", "jeremy")
   })
 
   m.Run()
