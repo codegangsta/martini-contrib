@@ -24,6 +24,7 @@
 package render
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/codegangsta/martini"
 	"html/template"
@@ -99,22 +100,28 @@ type renderer struct {
 }
 
 func (r *renderer) JSON(status int, v interface{}) {
-	r.Header().Set(ContentType, ContentJSON)
-	r.WriteHeader(status)
-
 	result, err := json.Marshal(v)
 	if err != nil {
 		http.Error(r, err.Error(), 500)
+		return
 	}
 
+	// json rendered fine, write out the result
+	r.Header().Set(ContentType, ContentJSON)
+	r.WriteHeader(status)
 	r.Write(result)
 }
 
 func (r *renderer) HTML(status int, name string, binding interface{}) {
-	r.Header().Set(ContentType, ContentHTML)
-	r.WriteHeader(status)
-	err := r.t.ExecuteTemplate(r, name, binding)
+	buf := new(bytes.Buffer)
+	err := r.t.ExecuteTemplate(buf, name, binding)
 	if err != nil {
 		http.Error(r, err.Error(), 500)
+		return
 	}
+
+	// template rendered fine, write out the result
+	r.Header().Set(ContentType, ContentHTML)
+	r.WriteHeader(status)
+	r.Write(buf.Bytes())
 }
