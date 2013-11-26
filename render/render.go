@@ -83,6 +83,7 @@ func compile(dir string) *template.Template {
 
 			name := (r[0 : len(r)-len(ext)])
 			tmpl := t.New(name)
+			// Bomb out if parse fails. We don't want any silent server starts.
 			template.Must(tmpl.Parse(string(buf)))
 		}
 
