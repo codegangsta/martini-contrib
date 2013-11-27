@@ -28,10 +28,10 @@ type Context struct {
 	http.ResponseWriter
 }
 
+// if cookie secret is set to "", then SetSecureCookie would not work
 func ContextWithCookieSecret(secret string) martini.Handler {
 	return func(w http.ResponseWriter, req *http.Request, mc martini.Context) {
 		ctx := &Context{req, map[string]string{}, secret, w}
-
 		//set some default headers
 		tm := time.Now().UTC()
 
