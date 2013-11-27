@@ -113,9 +113,8 @@ func (r *renderer) JSON(status int, v interface{}) {
 }
 
 func (r *renderer) HTML(status int, name string, binding interface{}) {
-	buf := new(bytes.Buffer)
-	err := r.t.ExecuteTemplate(buf, name, binding)
-	if err != nil {
+	var buf bytes.Buffer
+	if err := r.t.ExecuteTemplate(&buf, name, binding); err != nil {
 		http.Error(r, err.Error(), 500)
 		return
 	}
