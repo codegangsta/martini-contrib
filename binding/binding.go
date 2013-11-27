@@ -26,9 +26,9 @@ func Bind(obj interface{}) martini.Handler {
 		} else if strings.Contains(contentType, "json") {
 			context.Invoke(Json(obj))
 		} else {
-			context.Invoke(Form(obj))
+			context.Invoke(Json(obj))
 			if getErrors(context).Count() > 0 {
-				context.Invoke(Json(obj))
+				context.Invoke(Form(obj))
 			}
 		}
 

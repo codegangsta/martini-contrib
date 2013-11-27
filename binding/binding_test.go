@@ -247,6 +247,14 @@ var (
 			true,
 			&BlogPost{"Blog Post Title", "This is the content"},
 		}: http.StatusOK,
+		testCase{
+			"GET",
+			"http://localhost:3000/blogposts/create",
+			`{"content":"This is the content", "title":"Blog Post Title"}`,
+			"",
+			true,
+			&BlogPost{"Blog Post Title", "This is the content"},
+		}: http.StatusOK,
 	}
 
 	formTests = []testCase{
