@@ -32,11 +32,14 @@ func Bind(obj interface{}) martini.Handler {
 			}
 		}
 
-		bailIfErrors(resp, context)
+		errs := getErrors(context)
 
-		context.Invoke(Validate(obj))
-
-		bailIfErrors(resp, context)
+		if errs.Count() > 0 {
+			resp.WriteHeader(http.StatusBadRequest)
+			errOutput, _ := json.Marshal(errs)
+			resp.Write(errOutput)
+			return
+		}
 	}
 }
 
@@ -59,6 +62,10 @@ func Form(formStruct interface{}) martini.Handler {
 			}
 		}
 
+		context.Invoke(Validate(formStruct))
+
+		errors.combine(getErrors(context))
+
 		context.Map(*errors)
 		context.Map(formStruct)
 	}
@@ -78,6 +85,10 @@ func Json(jsonStruct interface{}) martini.Handler {
 			errors.Overall[DeserializationError] = err.Error()
 		}
 
+		context.Invoke(Validate(jsonStruct))
+
+		errors.combine(getErrors(context))
+
 		context.Map(*errors)
 		context.Map(jsonStruct)
 	}
@@ -90,13 +101,17 @@ func Validate(obj interface{}) martini.Handler {
 
 		for i := 0; i < typ.NumField(); i++ {
 			field := typ.Field(i)
-			if hasRequired(string(field.Tag)) && !reflect.ValueOf(field).IsValid() {
+
+			zero := reflect.Zero(field.Type).Interface()
+			value := reflect.ValueOf(obj).Elem().Field(i).Interface()
+
+			if hasRequired(string(field.Tag)) && reflect.DeepEqual(zero, value) {
 				errors.Fields[field.Name] = RequireError
 			}
 		}
 
 		if validator, ok := obj.(Validator); ok {
-			validator.Validate(errors)
+			validator.Validate(errors, req)
 		}
 
 		context.Map(*errors)
@@ -145,18 +160,21 @@ func newErrors() *Errors {
 	return &Errors{make(map[string]string), make(map[string]string)}
 }
 
-func bailIfErrors(resp http.ResponseWriter, context martini.Context) {
-	errs := getErrors(context)
-	if errs.Count() > 0 {
-		resp.WriteHeader(http.StatusBadRequest)
-		errOutput, _ := json.Marshal(errs)
-		resp.Write(errOutput)
-		return
-	}
-}
-
 func getErrors(context martini.Context) Errors {
 	return context.Get(errsType).Interface().(Errors)
+}
+
+func (this *Errors) combine(other Errors) {
+	for key, val := range other.Fields {
+		if _, exists := this.Fields[key]; !exists {
+			this.Fields[key] = val
+		}
+	}
+	for key, val := range other.Overall {
+		if _, exists := this.Overall[key]; !exists {
+			this.Overall[key] = val
+		}
+	}
 }
 
 func (self Errors) Count() int {
@@ -174,7 +192,7 @@ type (
 	// Implement the Validator interface to define your own input
 	// validation before the request even gets to your application.
 	Validator interface {
-		Validate(*Errors)
+		Validate(*Errors, *http.Request)
 	}
 )
 

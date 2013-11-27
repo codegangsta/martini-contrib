@@ -148,7 +148,7 @@ func performValidationTest(post *BlogPost, handler func(Errors), t *testing.T) {
 	m.ServeHTTP(recorder, req)
 }
 
-func (self BlogPost) Validate(errors *Errors) {
+func (self BlogPost) Validate(errors *Errors, req *http.Request) {
 	if len(self.Title) < 4 {
 		errors.Fields["Title"] = "Too short; minimum 4 characters"
 	}
@@ -181,7 +181,7 @@ var (
 		// These should bail at the deserialization/binding phase
 		testCase{
 			"POST",
-			"http://localhost:3000/blogposts/create",
+			path,
 			`{ bad JSON `,
 			"application/json",
 			false,
@@ -189,16 +189,16 @@ var (
 		}: http.StatusBadRequest,
 		testCase{
 			"POST",
-			"http://localhost:3000/blogposts/create",
-			`not URL-encoded: "see?"`,
+			path,
+			`not URL-encoded but has content-type`,
 			"x-www-form-urlencoded",
 			false,
 			new(BlogPost),
 		}: http.StatusBadRequest,
 		testCase{
 			"POST",
-			"http://localhost:3000/blogposts/create",
-			`...not URL-encoded or JSON..."`,
+			path,
+			`no content-type and not URL-encoded or JSON"`,
 			"",
 			false,
 			new(BlogPost),
@@ -207,7 +207,7 @@ var (
 		// These should deserialize, then bail at the validation phase
 		testCase{
 			"GET",
-			"http://localhost:3000/blogposts/create?content=This+is+the+content",
+			path + "?content=This+is+the+content",
 			``,
 			"x-www-form-urlencoded",
 			false,
@@ -215,17 +215,17 @@ var (
 		}: http.StatusBadRequest,
 		testCase{
 			"GET",
-			"http://localhost:3000/blogposts/create",
+			path + "",
 			`{"content":"", "title":"Blog Post Title"}`,
 			"application/json",
 			false,
-			&BlogPost{"Blog Post Title", "short"},
+			&BlogPost{"Blog Post Title", ""},
 		}: http.StatusBadRequest,
 
 		// These should succeed
 		testCase{
 			"GET",
-			"http://localhost:3000/blogposts/create",
+			path + "",
 			`{"content":"This is the content", "title":"Blog Post Title"}`,
 			"application/json",
 			true,
@@ -233,7 +233,7 @@ var (
 		}: http.StatusOK,
 		testCase{
 			"GET",
-			"http://localhost:3000/blogposts/create?content=This is the content&title=Blog+Post+Title",
+			path + "?content=This is the content&title=Blog+Post+Title",
 			``,
 			"",
 			true,
@@ -241,7 +241,7 @@ var (
 		}: http.StatusOK,
 		testCase{
 			"GET",
-			"http://localhost:3000/blogposts/create?content=This is the content&title=Blog+Post+Title",
+			path + "?content=This is the content&title=Blog+Post+Title",
 			`{"content":"This is the content", "title":"Blog Post Title"}`,
 			"",
 			true,
@@ -249,7 +249,7 @@ var (
 		}: http.StatusOK,
 		testCase{
 			"GET",
-			"http://localhost:3000/blogposts/create",
+			path + "",
 			`{"content":"This is the content", "title":"Blog Post Title"}`,
 			"",
 			true,
@@ -260,7 +260,7 @@ var (
 	formTests = []testCase{
 		{
 			"GET",
-			"http://localhost:3000/blogposts/create?content=This is the content",
+			path + "?content=This is the content",
 			"",
 			"",
 			true,
@@ -268,7 +268,7 @@ var (
 		},
 		{
 			"POST",
-			"http://localhost:3000/blogposts/create?content=This is the content&title=Blog+Post+Title",
+			path + "?content=This is the content&title=Blog+Post+Title",
 			"",
 			"",
 			true,
@@ -347,4 +347,7 @@ var (
 	}
 )
 
-const route = "/blogposts/create"
+const (
+	route = "/blogposts/create"
+	path  = "http://localhost:3000" + route
+)
