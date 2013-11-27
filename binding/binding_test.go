@@ -171,7 +171,7 @@ type (
 	}
 
 	BlogPost struct {
-		Title   string `form:"title" json:"title" required` // 'required' attribute must be at the end
+		Title   string `form:"title" json:"title" required` // 'required' attribute must be at the end, or you have to do: required:""
 		Content string `form:"content" json:"content"`
 	}
 )
