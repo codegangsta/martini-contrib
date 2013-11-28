@@ -1,5 +1,6 @@
-// Package web is a lightweight web framework for Go. It's ideal for
-// writing simple, performant backend web services.
+// Package web provides a web.go compitable layer for reusing the code written with
+// hoisie's `web.go` framework. Basiclly this package add web.Context to
+// martini's dependency injection system.
 package web
 
 import (

@@ -23,7 +23,7 @@ import (
 
 func main() {
   m := martini.Classic()
-  m.Use(web.ContextWithCookieSecret())
+  m.Use(web.ContextWithCookieSecret(""))
 
   m.Post("/hello", func(ctx *web.Context){
   	  ctx.WriteString("Hello World!")
