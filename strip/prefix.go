@@ -1,3 +1,5 @@
+// packcage strip provides the same functionality as http.StripPrefix
+// and can be used in martini instance level and request context level.
 package strip
 
 import (
