@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// strip Prefix for every incoming http request
 func Prefix(prefix string) martini.Handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if prefix == "" {
