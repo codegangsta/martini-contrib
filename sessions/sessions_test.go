@@ -1,8 +1,10 @@
 package sessions
 
 import (
+	"github.com/codegangsta/martini"
 	"testing"
 )
 
-func Test_Session(t *testing.T) {
+func Test_Sessions(t *testing.T) {
+	m := martini.Classic()
 }
