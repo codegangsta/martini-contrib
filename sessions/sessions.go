@@ -15,6 +15,10 @@ type Store interface {
 	sessions.Store
 }
 
+func NewCookieStore(keyPairs ...[]byte) Store {
+	return sessions.NewCookieStore(keyPairs...)
+}
+
 type Session interface {
 	Get(interface{}) interface{}
 	Set(interface{}, interface{})
