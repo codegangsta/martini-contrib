@@ -35,8 +35,7 @@ func Sessions(name string, store Store) martini.Handler {
 		c.Next()
 
 		// save session after other handlers are run
-		err = s.Save(r, res)
-		check(err, l)
+		check(s.Save(r, res), l)
 	}
 }
 
