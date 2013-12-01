@@ -2,9 +2,9 @@
 
 This package includes a variety of add-on components for Martini, a classy web framework for Go:
 
-Install the package (**go 1.1** and greater is required):
+Install all the packages (**go 1.1** and greater is required):
 ~~~
-go get github.com/codegangsta/martini-contrib
+go get github.com/codegangsta/martini-contrib/...
 ~~~
 
 Join the [Mailing list](https://groups.google.com/forum/#!forum/martini-go)
