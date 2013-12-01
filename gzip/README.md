@@ -20,6 +20,8 @@ func main() {
 
 ~~~
 
+Make sure to include the Gzip middleware above other middleware that alter the response body (like the render middleware).
+
 ## Authors
 * [Jeremy Saenz](http://github.com/codegangsta)
 * [Shane Logsdon](http://github.com/slogsdon)
