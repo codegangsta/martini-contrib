@@ -122,7 +122,7 @@ func Validate(obj interface{}) martini.Handler {
 // does this for us! Well, not really. The built-in parsing
 // done by .Get() gets the value only, and doesn't detect if the
 // key is there. Example: .Get("key") is "" for both `key:""` and ``.
-// We just want to know if the required key is present in the tag.
+// We just want to know if the 'required' key is present in the tag.
 func hasRequired(tag string) bool {
 	word, required := "", "required"
 	skip := false

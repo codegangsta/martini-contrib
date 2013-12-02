@@ -118,9 +118,9 @@ func TestValidate(t *testing.T) {
 
 func TestTagParser(t *testing.T) {
 	tests := map[string]bool{
-		`form:"title" json:"title" required`: true,
-		`form:"title" required json:"title"`: true,
-		`required form:"title" json:"title"`: true,
+		`form:"title" json:"title" required`: true, // Putting "required" at the end like this is fine
+		`form:"title" required json:"title"`: true, // Don't use a tag like this in production
+		`required form:"title" json:"title"`: true, // Don't use a tag like this in production
 		`required`:                           true,
 		`form:"title" json:"title"`:          false,
 		``: false,
