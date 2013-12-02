@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -58,7 +59,13 @@ func Form(formStruct interface{}) martini.Handler {
 			field := typ.Field(i)
 			if nameInTag := field.Tag.Get("form"); nameInTag != "" {
 				val := req.Form.Get(nameInTag)
-				reflect.ValueOf(formStruct).Elem().Field(i).SetString(val)
+				valField := reflect.ValueOf(formStruct).Elem().Field(i)
+
+				if !valField.CanSet() {
+					continue
+				}
+
+				setWithProperType(field, val, valField, nameInTag, errors)
 			}
 		}
 
@@ -156,6 +163,53 @@ func hasRequired(tag string) bool {
 	return false
 }
 
+func setWithProperType(field reflect.StructField, val string, valField reflect.Value, nameInTag string, errors *Errors) {
+	switch field.Type.Kind() {
+	case reflect.Int:
+		if val == "" {
+			val = "0"
+		}
+		intVal, err := strconv.Atoi(val)
+		if err != nil {
+			errors.Fields[nameInTag] = IntegerTypeError
+		} else {
+			valField.SetInt(int64(intVal))
+		}
+	case reflect.Bool:
+		if val == "" {
+			val = "false"
+		}
+		boolVal, err := strconv.ParseBool(val)
+		if err != nil {
+			errors.Fields[nameInTag] = BooleanTypeError
+		} else {
+			valField.SetBool(boolVal)
+		}
+	case reflect.Float32:
+		if val == "" {
+			val = "0.0"
+		}
+		floatVal, err := strconv.ParseFloat(val, 32)
+		if err != nil {
+			errors.Fields[nameInTag] = FloatTypeError
+		} else {
+			valField.SetFloat(floatVal)
+		}
+	case reflect.Float64:
+		if val == "" {
+			val = "0.0"
+		}
+		floatVal, err := strconv.ParseFloat(val, 64)
+		if err != nil {
+			errors.Fields[nameInTag] = FloatTypeError
+		} else {
+			valField.SetFloat(floatVal)
+		}
+	case reflect.String:
+		valField.SetString(val)
+	}
+}
+
 func newErrors() *Errors {
 	return &Errors{make(map[string]string), make(map[string]string)}
 }
@@ -204,4 +258,7 @@ const (
 	RequireError         string = "Required"
 	DeserializationError string = "DeserializationError"
 	ReaderError          string = "ReaderError"
+	IntegerTypeError     string = "IntegerTypeError"
+	BooleanTypeError     string = "BooleanTypeError"
+	FloatTypeError       string = "FloatTypeError"
 )

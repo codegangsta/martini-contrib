@@ -92,6 +92,7 @@ func TestJson(t *testing.T) {
 func handle(test testCase, t *testing.T, index int, post *BlogPost) {
 	assertEqualField(t, "Title", index, test.ref.Title, post.Title)
 	assertEqualField(t, "Content", index, test.ref.Content, post.Content)
+	assertEqualField(t, "Views", index, test.ref.Views, post.Views)
 }
 
 func assertEqualField(t *testing.T, fieldname string, testcasenumber int, expected interface{}, got interface{}) {
@@ -112,8 +113,8 @@ func TestValidate(t *testing.T) {
 		}
 	}
 
-	performValidationTest(&BlogPost{"", "..."}, handlerMustErr, t)
-	performValidationTest(&BlogPost{"Good Title", "Good content"}, handlerNoErr, t)
+	performValidationTest(&BlogPost{"", "...", 0}, handlerMustErr, t)
+	performValidationTest(&BlogPost{"Good Title", "Good content", 0}, handlerNoErr, t)
 }
 
 func TestTagParser(t *testing.T) {
@@ -173,6 +174,7 @@ type (
 	BlogPost struct {
 		Title   string `form:"title" json:"title" required` // 'required' attribute must be at the end, or you have to do: required:""
 		Content string `form:"content" json:"content"`
+		Views   int    `form:"views" json:"views"`
 	}
 )
 
@@ -211,7 +213,7 @@ var (
 			``,
 			"x-www-form-urlencoded",
 			false,
-			&BlogPost{"", "This is the content"},
+			&BlogPost{Title: "", Content: "This is the content"},
 		}: http.StatusBadRequest,
 		testCase{
 			"GET",
@@ -219,7 +221,7 @@ var (
 			`{"content":"", "title":"Blog Post Title"}`,
 			"application/json",
 			false,
-			&BlogPost{"Blog Post Title", ""},
+			&BlogPost{Title: "Blog Post Title", Content: ""},
 		}: http.StatusBadRequest,
 
 		// These should succeed
@@ -229,7 +231,7 @@ var (
 			`{"content":"This is the content", "title":"Blog Post Title"}`,
 			"application/json",
 			true,
-			&BlogPost{"Blog Post Title", "This is the content"},
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content"},
 		}: http.StatusOK,
 		testCase{
 			"GET",
@@ -237,23 +239,23 @@ var (
 			``,
 			"",
 			true,
-			&BlogPost{"Blog Post Title", "This is the content"},
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content"},
 		}: http.StatusOK,
-		testCase{
+		/*testCase{
 			"GET",
 			path + "?content=This is the content&title=Blog+Post+Title",
 			`{"content":"This is the content", "title":"Blog Post Title"}`,
 			"",
 			true,
-			&BlogPost{"Blog Post Title", "This is the content"},
-		}: http.StatusOK,
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content"},
+		}: http.StatusOK,*/
 		testCase{
 			"GET",
 			path + "",
 			`{"content":"This is the content", "title":"Blog Post Title"}`,
 			"",
 			true,
-			&BlogPost{"Blog Post Title", "This is the content"},
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content"},
 		}: http.StatusOK,
 	}
 
@@ -264,15 +266,15 @@ var (
 			"",
 			"",
 			true,
-			&BlogPost{"", "This is the content"},
+			&BlogPost{Title: "", Content: "This is the content"},
 		},
 		{
 			"POST",
-			path + "?content=This is the content&title=Blog+Post+Title",
+			path + "?content=This is the content&title=Blog+Post+Title&views=3",
 			"",
 			"",
 			true,
-			&BlogPost{"Blog Post Title", "This is the content"},
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Views: 3},
 		},
 	}
 
@@ -318,7 +320,7 @@ var (
 			`{"content":"This is the content"}`,
 			"",
 			true,
-			&BlogPost{"", "This is the content"},
+			&BlogPost{Title: "", Content: "This is the content"},
 		},
 		{
 			"POST",
@@ -326,7 +328,7 @@ var (
 			`{"content":"This is the content", "title":"Blog Post Title"}`,
 			"",
 			true,
-			&BlogPost{"Blog Post Title", "This is the content"},
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content"},
 		},
 		{
 			"PUT",
@@ -334,7 +336,7 @@ var (
 			`{"content":"This is the content", "title":"Blog Post Title"}`,
 			"",
 			true,
-			&BlogPost{"Blog Post Title", "This is the content"},
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content"},
 		},
 		{
 			"DELETE",
@@ -342,7 +344,7 @@ var (
 			`{"content":"This is the content", "title":"Blog Post Title"}`,
 			"",
 			true,
-			&BlogPost{"Blog Post Title", "This is the content"},
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content"},
 		},
 	}
 )
