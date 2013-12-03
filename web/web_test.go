@@ -1,9 +1,7 @@
 package web
 
 import (
-	// When do the merges, should correct the import path
-	// or martini.Context would not be correctly injected
-	"github.com/Archs/martini"
+	"github.com/codegangsta/martini"
 	"net/http"
 	"net/http/httptest"
 	"testing"

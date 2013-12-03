@@ -9,9 +9,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
-	// When do the merges, should correct the import path
-	// or martini.Context would not be correctly injected
-	"github.com/Archs/martini"
+	"github.com/codegangsta/martini"
 	"io/ioutil"
 	"mime"
 	"net/http"
