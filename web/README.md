@@ -4,7 +4,7 @@
 [hoisie]:https://github.com/hoisie
 [web.go]:https://github.com/hoisie/web
 
-[API Reference](http://godoc.org/github.com/Archs/martini-contrib/web)
+[API Reference](http://godoc.org/github.com/codegangsta/martini-contrib/web)
 
 ## Description
 `web.Context` provides a [web.go][] compitable layer for reusing the code written with

@@ -1,6 +1,6 @@
 # strip
 
-[API Reference](http://godoc.org/github.com/Archs/martini-contrib/strip)
+[API Reference](http://godoc.org/github.com/codegangsta/martini-contrib/strip)
 
 ## Description
 packcage `strip` modifies the URL before the requests go into the other 
