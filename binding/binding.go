@@ -1,3 +1,5 @@
+// Package binding transforms, with validatoin, a raw request into
+// a populated structure used by your application logic.
 package binding
 
 import (
@@ -18,8 +20,16 @@ import (
 		And in this package BIND them.
 			- Sincerely, Sauron
 */
+
+// Bind accepts a copy of an empty struct and populates it with
+// values from the request (if deserialization is successful). It
+// wraps up the functionality of the Form and Json middleware
+// according to the Content-Type of the request, and it guesses
+// if no Content-Type is specified. Bind invokes the ErrorHandler
+// middleware to bail out if errors occurred. If you want to perform
+// your own error handling, use Form or Json middleware directly.
 func Bind(obj interface{}) martini.Handler {
-	return func(context martini.Context, req *http.Request, resp http.ResponseWriter) {
+	return func(context martini.Context, req *http.Request) {
 		contentType := req.Header.Get("Content-Type")
 
 		if strings.Contains(contentType, "form-urlencoded") {
@@ -33,17 +43,15 @@ func Bind(obj interface{}) martini.Handler {
 			}
 		}
 
-		errs := getErrors(context)
-
-		if errs.Count() > 0 {
-			resp.WriteHeader(http.StatusBadRequest)
-			errOutput, _ := json.Marshal(errs)
-			resp.Write(errOutput)
-			return
-		}
+		context.Invoke(ErrorHandler())
 	}
 }
 
+// Form is middleware to deserialize Form-encoded data from the request.
+// It gets data from the form-urlencoded payload, if present, or from the
+// query string as well. It uses the http.Request.ParseForm() method to
+// perform deserialization, then reflection is used to map each field
+// into the struct with the proper type.
 func Form(formStruct interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
 		errors := newErrors()
@@ -78,6 +86,9 @@ func Form(formStruct interface{}) martini.Handler {
 	}
 }
 
+// Json is middleware to deserialize a JSON payload from the request
+// into the struct that is passed in. The resulting struct is then
+// validated, but no error handling is actually performed here.
 func Json(jsonStruct interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
 		if req.Body != nil {
@@ -101,6 +112,10 @@ func Json(jsonStruct interface{}) martini.Handler {
 	}
 }
 
+// Validate is middleware to enforce required fields. If the struct
+// passed in is a Validator, then the user-defined Validate method
+// is executed, and its errors are mapped to the context. This middleware
+// performs no error handling: it merely detects them and maps them.
 func Validate(obj interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
 		typ := reflect.TypeOf(obj).Elem()
@@ -125,11 +140,33 @@ func Validate(obj interface{}) martini.Handler {
 	}
 }
 
+// ErrorHandler simply counts the number of errors in the
+// context and, if more than 0, writes a 400 Bad Request
+// response and a JSON payload describing the errors.
+// Middleware still on the stack will not even see the request
+// if, by this point, there are any errors.
+// This is a "default" handler, of sorts, and you are
+// welcome to use your own instead. The Bind middleware
+// invokes this automatically for convenience.
+func ErrorHandler() martini.Handler {
+	return func(context martini.Context, req *http.Request, resp http.ResponseWriter) {
+		errs := getErrors(context)
+
+		if errs.Count() > 0 {
+			resp.WriteHeader(http.StatusBadRequest)
+			errOutput, _ := json.Marshal(errs)
+			resp.Write(errOutput)
+			return
+		}
+	}
+}
+
 // Parsing tags on our own? Madness, you say: The reflect package
 // does this for us! Well, not really. The built-in parsing
 // done by .Get() gets the value only, and doesn't detect if the
 // key is there. Example: .Get("key") is "" for both `key:""` and ``.
 // We just want to know if the 'required' key is present in the tag.
+// (The encoding/json package does something similar in tags.go.)
 func hasRequired(tag string) bool {
 	word, required := "", "required"
 	skip := false
@@ -163,6 +200,10 @@ func hasRequired(tag string) bool {
 	return false
 }
 
+// This sets the value in a struct of an indeterminate type to the
+// matching value from the request (via Form middleware) in the
+// same type, so that not all deserialized values have to be strings.
+// Supported types are string, int, float, and bool.
 func setWithProperType(field reflect.StructField, val string, valField reflect.Value, nameInTag string, errors *Errors) {
 	switch field.Type.Kind() {
 	case reflect.Int:
@@ -215,7 +256,7 @@ func newErrors() *Errors {
 }
 
 func getErrors(context martini.Context) Errors {
-	return context.Get(errsType).Interface().(Errors)
+	return context.Get(reflect.TypeOf(Errors{})).Interface().(Errors)
 }
 
 func (this *Errors) combine(other Errors) {
@@ -231,6 +272,8 @@ func (this *Errors) combine(other Errors) {
 	}
 }
 
+// Total errors is the sum of errors with the request overall
+// and errors on individual fields.
 func (self Errors) Count() int {
 	return len(self.Overall) + len(self.Fields)
 }
@@ -245,13 +288,10 @@ type (
 
 	// Implement the Validator interface to define your own input
 	// validation before the request even gets to your application.
+	// The Validate method will be executed during the validation phase.
 	Validator interface {
 		Validate(*Errors, *http.Request)
 	}
-)
-
-var (
-	errsType = reflect.TypeOf(Errors{})
 )
 
 const (
