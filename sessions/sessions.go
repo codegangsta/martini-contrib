@@ -22,6 +22,8 @@ func NewCookieStore(keyPairs ...[]byte) Store {
 type Session interface {
 	Get(interface{}) interface{}
 	Set(interface{}, interface{})
+	AddFlash(value interface{}, vars ...string)
+	Flashes(vars ...string) []interface{}
 }
 
 func Sessions(name string, store Store) martini.Handler {
