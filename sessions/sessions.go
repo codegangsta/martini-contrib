@@ -21,6 +21,7 @@ package sessions
 
 import (
 	"github.com/codegangsta/martini"
+	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 	"log"
 	"net/http"
@@ -71,6 +72,10 @@ type Session interface {
 func Sessions(name string, store Store) martini.Handler {
 	return func(res http.ResponseWriter, r *http.Request, c martini.Context, l *log.Logger) {
 		s, err := store.Get(r, name)
+		// clear the context right away, we don't need to use
+		// gorilla context and we don't want memory leaks
+		context.Clear(r)
+
 		check(err, l)
 
 		// Map to the Session interface
