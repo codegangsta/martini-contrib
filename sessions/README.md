@@ -25,10 +25,7 @@ func main() {
 	})
 
 	m.Get("/get", func(session sessions.Session) string {
-		if session.Get("hello") != "world" {
-			t.Error("Session writing failed")
-		}
-		return "OK"
+		return session.Get("hello")
 	})
 
   m.Run()
