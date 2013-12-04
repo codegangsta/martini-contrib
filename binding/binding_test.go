@@ -12,14 +12,14 @@ func TestBind(t *testing.T) {
 	index := 0
 	for test, expectStatus := range bindTests {
 		recorder := httptest.NewRecorder()
-		handler := func(post *BlogPost, errors Errors) { handle(test, t, index, post) }
+		handler := func(post BlogPost, errors Errors) { handle(test, t, index, post) }
 
 		m := martini.Classic()
 		switch test.method {
 		case "GET":
-			m.Get(route, Bind(&BlogPost{}), handler)
+			m.Get(route, Bind(BlogPost{}), handler)
 		case "POST":
-			m.Post(route, Bind(&BlogPost{}), handler)
+			m.Post(route, Bind(BlogPost{}), handler)
 		}
 
 		req, err := http.NewRequest(test.method, test.path, strings.NewReader(test.payload))
@@ -41,19 +41,16 @@ func TestBind(t *testing.T) {
 func TestForm(t *testing.T) {
 	for index, test := range formTests {
 		recorder := httptest.NewRecorder()
-		handler := func(post *BlogPost, errors Errors) {
-			if !test.ok && errors.Count() == 0 {
-				t.Errorf("Expected RequireError in test case %d", index)
-			}
+		handler := func(post BlogPost, errors Errors) {
 			handle(test, t, index, post)
 		}
 
 		m := martini.Classic()
 		switch test.method {
 		case "GET":
-			m.Get(route, Form(&BlogPost{}), handler)
+			m.Get(route, Form(BlogPost{}), handler)
 		case "POST":
-			m.Post(route, Form(&BlogPost{}), handler)
+			m.Post(route, Form(BlogPost{}), handler)
 		}
 
 		req, err := http.NewRequest(test.method, test.path, nil)
@@ -67,18 +64,18 @@ func TestForm(t *testing.T) {
 func TestJson(t *testing.T) {
 	for index, test := range jsonTests {
 		recorder := httptest.NewRecorder()
-		handler := func(post *BlogPost, errors Errors) { handle(test, t, index, post) }
+		handler := func(post BlogPost, errors Errors) { handle(test, t, index, post) }
 
 		m := martini.Classic()
 		switch test.method {
 		case "GET":
-			m.Get(route, Json(&BlogPost{}), handler)
+			m.Get(route, Json(BlogPost{}), handler)
 		case "POST":
-			m.Post(route, Json(&BlogPost{}), handler)
+			m.Post(route, Json(BlogPost{}), handler)
 		case "PUT":
-			m.Put(route, Json(&BlogPost{}), handler)
+			m.Put(route, Json(BlogPost{}), handler)
 		case "DELETE":
-			m.Delete(route, Json(&BlogPost{}), handler)
+			m.Delete(route, Json(BlogPost{}), handler)
 		}
 
 		req, err := http.NewRequest(test.method, route, strings.NewReader(test.payload))
@@ -89,7 +86,7 @@ func TestJson(t *testing.T) {
 	}
 }
 
-func handle(test testCase, t *testing.T, index int, post *BlogPost) {
+func handle(test testCase, t *testing.T, index int, post BlogPost) {
 	assertEqualField(t, "Title", index, test.ref.Title, post.Title)
 	assertEqualField(t, "Content", index, test.ref.Content, post.Content)
 	assertEqualField(t, "Views", index, test.ref.Views, post.Views)
@@ -241,14 +238,14 @@ var (
 			true,
 			&BlogPost{Title: "Blog Post Title", Content: "This is the content"},
 		}: http.StatusOK,
-		/*testCase{
+		testCase{
 			"GET",
 			path + "?content=This is the content&title=Blog+Post+Title",
 			`{"content":"This is the content", "title":"Blog Post Title"}`,
 			"",
 			true,
 			&BlogPost{Title: "Blog Post Title", Content: "This is the content"},
-		}: http.StatusOK,*/
+		}: http.StatusOK,
 		testCase{
 			"GET",
 			path + "",

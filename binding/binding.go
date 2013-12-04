@@ -54,6 +54,8 @@ func Bind(obj interface{}) martini.Handler {
 // into the struct with the proper type.
 func Form(formStruct interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
+		ensureNotPointer(formStruct)
+		formStruct := reflect.New(reflect.TypeOf(formStruct))
 		errors := newErrors()
 		parseErr := req.ParseForm()
 
@@ -61,28 +63,28 @@ func Form(formStruct interface{}) martini.Handler {
 			errors.Overall[DeserializationError] = parseErr.Error()
 		}
 
-		typ := reflect.TypeOf(formStruct).Elem()
+		typ := formStruct.Elem().Type()
 
 		for i := 0; i < typ.NumField(); i++ {
-			field := typ.Field(i)
-			if nameInTag := field.Tag.Get("form"); nameInTag != "" {
-				val := req.Form.Get(nameInTag)
-				valField := reflect.ValueOf(formStruct).Elem().Field(i)
+			typeField := typ.Field(i)
+			if inputFieldName := typeField.Tag.Get("form"); inputFieldName != "" {
+				inputValue := req.Form.Get(inputFieldName)
+				structField := formStruct.Elem().Field(i)
 
-				if !valField.CanSet() {
+				if !structField.CanSet() {
 					continue
 				}
 
-				setWithProperType(field, val, valField, nameInTag, errors)
+				setWithProperType(typeField, inputValue, structField, inputFieldName, errors)
 			}
 		}
 
-		context.Invoke(Validate(formStruct))
+		context.Invoke(Validate(formStruct.Interface()))
 
 		errors.combine(getErrors(context))
 
 		context.Map(*errors)
-		context.Map(formStruct)
+		context.Map(formStruct.Elem().Interface())
 	}
 }
 
@@ -91,24 +93,27 @@ func Form(formStruct interface{}) martini.Handler {
 // validated, but no error handling is actually performed here.
 func Json(jsonStruct interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
+		ensureNotPointer(jsonStruct)
+		jsonStruct := reflect.New(reflect.TypeOf(jsonStruct))
+		errors := newErrors()
+
 		if req.Body != nil {
 			defer req.Body.Close()
 		}
-		errors := newErrors()
 
 		content, err := ioutil.ReadAll(req.Body)
 		if err != nil {
 			errors.Overall[ReaderError] = err.Error()
-		} else if err = json.Unmarshal(content, jsonStruct); err != nil {
+		} else if err = json.Unmarshal(content, jsonStruct.Interface()); err != nil {
 			errors.Overall[DeserializationError] = err.Error()
 		}
 
-		context.Invoke(Validate(jsonStruct))
+		context.Invoke(Validate(jsonStruct.Interface()))
 
 		errors.combine(getErrors(context))
 
 		context.Map(*errors)
-		context.Map(jsonStruct)
+		context.Map(jsonStruct.Elem().Interface())
 	}
 }
 
@@ -125,7 +130,11 @@ func Validate(obj interface{}) martini.Handler {
 			field := typ.Field(i)
 
 			zero := reflect.Zero(field.Type).Interface()
-			value := reflect.ValueOf(obj).Elem().Field(i).Interface()
+			val := reflect.ValueOf(obj)
+			if val.Kind() == reflect.Ptr || val.Kind() == reflect.Interface {
+				val = val.Elem()
+			}
+			value := val.Field(i).Interface()
 
 			if hasRequired(string(field.Tag)) && reflect.DeepEqual(zero, value) {
 				errors.Fields[field.Name] = RequireError
@@ -204,9 +213,9 @@ func hasRequired(tag string) bool {
 // matching value from the request (via Form middleware) in the
 // same type, so that not all deserialized values have to be strings.
 // Supported types are string, int, float, and bool.
-func setWithProperType(field reflect.StructField, val string, valField reflect.Value, nameInTag string, errors *Errors) {
-	switch field.Type.Kind() {
-	case reflect.Int:
+func setWithProperType(typeField reflect.StructField, val string, structField reflect.Value, nameInTag string, errors *Errors) {
+	switch typeField.Type.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if val == "" {
 			val = "0"
 		}
@@ -214,7 +223,7 @@ func setWithProperType(field reflect.StructField, val string, valField reflect.V
 		if err != nil {
 			errors.Fields[nameInTag] = IntegerTypeError
 		} else {
-			valField.SetInt(int64(intVal))
+			structField.SetInt(int64(intVal))
 		}
 	case reflect.Bool:
 		if val == "" {
@@ -224,7 +233,7 @@ func setWithProperType(field reflect.StructField, val string, valField reflect.V
 		if err != nil {
 			errors.Fields[nameInTag] = BooleanTypeError
 		} else {
-			valField.SetBool(boolVal)
+			structField.SetBool(boolVal)
 		}
 	case reflect.Float32:
 		if val == "" {
@@ -234,7 +243,7 @@ func setWithProperType(field reflect.StructField, val string, valField reflect.V
 		if err != nil {
 			errors.Fields[nameInTag] = FloatTypeError
 		} else {
-			valField.SetFloat(floatVal)
+			structField.SetFloat(floatVal)
 		}
 	case reflect.Float64:
 		if val == "" {
@@ -244,10 +253,19 @@ func setWithProperType(field reflect.StructField, val string, valField reflect.V
 		if err != nil {
 			errors.Fields[nameInTag] = FloatTypeError
 		} else {
-			valField.SetFloat(floatVal)
+			structField.SetFloat(floatVal)
 		}
 	case reflect.String:
-		valField.SetString(val)
+		structField.SetString(val)
+	}
+}
+
+// Don't pass in pointers to bind to. Can lead to bugs. See:
+// https://github.com/codegangsta/martini-contrib/issues/40
+// https://github.com/codegangsta/martini-contrib/pull/34#issuecomment-29683659
+func ensureNotPointer(obj interface{}) {
+	if reflect.TypeOf(obj).Kind() == reflect.Ptr {
+		panic("Pointers are not accepted as binding models")
 	}
 }
 
