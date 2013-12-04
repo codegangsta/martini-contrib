@@ -72,19 +72,20 @@ type Session interface {
 func Sessions(name string, store Store) martini.Handler {
 	return func(res http.ResponseWriter, r *http.Request, c martini.Context, l *log.Logger) {
 		s, err := store.Get(r, name)
-		// clear the context right away, we don't need to use
+		// clear the context, we don't need to use
 		// gorilla context and we don't want memory leaks
-		context.Clear(r)
+		defer context.Clear(r)
 
 		check(err, l)
 
 		// Map to the Session interface
 		c.MapTo(&session{s}, (*Session)(nil))
 
-		c.Next()
-
-		// save session after other handlers are run
-		check(s.Save(r, res), l)
+		// Use before hook to save out the session
+		rw := res.(martini.ResponseWriter)
+		rw.Before(func(martini.ResponseWriter) {
+			check(s.Save(r, res), l)
+		})
 	}
 }
 
