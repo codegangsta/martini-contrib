@@ -4,16 +4,16 @@
 //
 //  import (
 //    "github.com/codegangsta/martini"
-//    "github.com/codegangsta/martini-contrib/render"
+//    "github.com/codegangsta/martini-contrib/sessions"
 //  )
 //
 //  func main() {
 // 	  m := martini.Classic()
 //
-// 	  store := NewCookieStore([]byte("secret123"))
-// 	  m.Use(Sessions("my_session", store))
+// 	  store := sessions.NewCookieStore([]byte("secret123"))
+// 	  m.Use(sessions.Sessions("my_session", store))
 //
-// 	  m.Get("/", func(session Session) string {
+// 	  m.Get("/", func(session sessions.Session) string {
 // 		  session.Set("hello", "world")
 // 	  })
 //  }
