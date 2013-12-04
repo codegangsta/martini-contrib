@@ -17,7 +17,7 @@ Join the [Mailing list](https://groups.google.com/forum/#!forum/martini-go)
 * [acceptlang](https://github.com/codegangsta/martini-contrib/tree/master/acceptlang) - Handler for parsing the `Accept-Language` HTTP header.
 * [sessions](https://github.com/codegangsta/martini-contrib/tree/master/sessions) - Handler that provides a Session service.
 * [web](https://github.com/codegangsta/martini-contrib/tree/master/web) - web.go Context compatibility.
-* [strib](https://github.com/codegangsta/martini-contrib/tree/master/strip) - URL Prefix stripping.
+* [strip](https://github.com/codegangsta/martini-contrib/tree/master/strip) - URL Prefix stripping.
 
 ## Contributing
 Feel free to submit patches or file issues via GitHub. If you have an idea for a handler put up a Pull Request and we will find where it fits best!
