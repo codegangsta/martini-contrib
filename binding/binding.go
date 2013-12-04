@@ -1,4 +1,4 @@
-// Package binding transforms, with validatoin, a raw request into
+// Package binding transforms, with validation, a raw request into
 // a populated structure used by your application logic.
 package binding
 
