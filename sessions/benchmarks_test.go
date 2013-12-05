@@ -2,8 +2,6 @@ package sessions
 
 import (
 	"github.com/codegangsta/martini"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -80,6 +78,5 @@ func BenchmarkSessionsWithRead(b *testing.B) {
 func testMartini() *martini.ClassicMartini {
 	m := martini.Classic()
 	m.Handlers()
-	m.Map(log.New(ioutil.Discard, "", 0))
 	return m
 }
