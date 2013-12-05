@@ -82,37 +82,41 @@ func Sessions(name string, store Store) martini.Handler {
 		// Use before hook to save out the session
 		rw := res.(martini.ResponseWriter)
 		rw.Before(func(martini.ResponseWriter) {
-			if s.Written {
-				check(s.Session.Save(r, res), l)
+			if s.Written() {
+				check(s.Session().Save(r, res), l)
 			}
 		})
 	}
 }
 
 type session struct {
-	Name    string
-	Request *http.Request
-	Logger  *log.Logger
-	Store   Store
-	Session *sessions.Session
-	Written bool
+	name    string
+	request *http.Request
+	logger  *log.Logger
+	store   Store
+	session *sessions.Session
+	written bool
 }
 
 func (s *session) Get(key interface{}) interface{} {
-	s.EnsureSession()
-	return s.Session.Values[key]
+	return s.Session().Values[key]
 }
 
 func (s *session) Set(key interface{}, val interface{}) {
-	s.EnsureSession()
-	s.Session.Values[key] = val
-	s.Written = true
+	s.Session().Values[key] = val
+	s.written = true
 }
 
-func (s *session) EnsureSession() {
-	if s.Session == nil {
-		s.Session, _ = s.Store.Get(s.Request, s.Name)
+func (s *session) Session() *sessions.Session {
+	if s.session == nil {
+		s.session, _ = s.store.Get(s.request, s.name)
 	}
+
+	return s.session
+}
+
+func (s *session) Written() bool {
+	return s.written
 }
 
 func check(err error, l *log.Logger) {
