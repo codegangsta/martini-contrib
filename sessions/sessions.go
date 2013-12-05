@@ -72,7 +72,7 @@ type Session interface {
 func Sessions(name string, store Store) martini.Handler {
 	return func(res http.ResponseWriter, r *http.Request, c martini.Context, l *log.Logger) {
 		// Map to the Session interface
-    s := &session{name, r, l, store, nil, false}
+		s := &session{name, r, l, store, nil, false}
 		c.MapTo(s, (*Session)(nil))
 
 		// clear the context, we don't need to use
@@ -82,37 +82,37 @@ func Sessions(name string, store Store) martini.Handler {
 		// Use before hook to save out the session
 		rw := res.(martini.ResponseWriter)
 		rw.Before(func(martini.ResponseWriter) {
-      if s.Written {
-        check(s.Session.Save(r, res), l)
-      }
+			if s.Written {
+				check(s.Session.Save(r, res), l)
+			}
 		})
 	}
 }
 
 type session struct {
-  Name string
-  Request *http.Request
-  Logger *log.Logger
-  Store Store
-  Session *sessions.Session
-  Written bool
+	Name    string
+	Request *http.Request
+	Logger  *log.Logger
+	Store   Store
+	Session *sessions.Session
+	Written bool
 }
 
 func (s *session) Get(key interface{}) interface{} {
-  s.EnsureSession()
+	s.EnsureSession()
 	return s.Session.Values[key]
 }
 
 func (s *session) Set(key interface{}, val interface{}) {
-  s.EnsureSession()
-  s.Written = true
+	s.EnsureSession()
 	s.Session.Values[key] = val
+	s.Written = true
 }
 
 func (s *session) EnsureSession() {
-  if s.Session == nil {
-    s.Session, _ = s.Store.Get(s.Request, s.Name)
-  }
+	if s.Session == nil {
+		s.Session, _ = s.Store.Get(s.Request, s.Name)
+	}
 }
 
 func check(err error, l *log.Logger) {
