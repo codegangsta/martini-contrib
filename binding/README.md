@@ -71,8 +71,8 @@ func main() {
 		return blogpost.Title
 	})
 
-	m.Get("/blog", binding.Form(BlogPost{}), binding.ErrorHandler(), func(blogpost BlogPost) string {
-		// This function won't execute if there were errors because of the ErrorHandler middleware
+	m.Get("/blog", binding.Form(BlogPost{}), binding.ErrorHandler, func(blogpost BlogPost) string {
+		// This function won't execute if there were errors
 		return blogpost.Title
 	})
 
@@ -84,7 +84,7 @@ func main() {
 		return blogpost.Title
 	})
 
-	m.Post("/blog", binding.Json(BlogPost{}), myOwnErrorHandler(), func(blogpost BlogPost) string {
+	m.Post("/blog", binding.Json(BlogPost{}), myOwnErrorHandler, func(blogpost BlogPost) string {
 		// By this point, I assume that my own middleware took care of any errors
 		return blogpost.Title
 	})

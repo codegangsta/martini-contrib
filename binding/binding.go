@@ -43,7 +43,7 @@ func Bind(obj interface{}) martini.Handler {
 			}
 		}
 
-		context.Invoke(ErrorHandler())
+		context.Invoke(ErrorHandler)
 	}
 }
 
@@ -79,12 +79,7 @@ func Form(formStruct interface{}) martini.Handler {
 			}
 		}
 
-		context.Invoke(Validate(formStruct.Interface()))
-
-		errors.combine(getErrors(context))
-
-		context.Map(*errors)
-		context.Map(formStruct.Elem().Interface())
+		validateAndMap(formStruct, context, errors)
 	}
 }
 
@@ -108,12 +103,7 @@ func Json(jsonStruct interface{}) martini.Handler {
 			errors.Overall[DeserializationError] = err.Error()
 		}
 
-		context.Invoke(Validate(jsonStruct.Interface()))
-
-		errors.combine(getErrors(context))
-
-		context.Map(*errors)
-		context.Map(jsonStruct.Elem().Interface())
+		validateAndMap(jsonStruct, context, errors)
 	}
 }
 
@@ -152,21 +142,17 @@ func Validate(obj interface{}) martini.Handler {
 // ErrorHandler simply counts the number of errors in the
 // context and, if more than 0, writes a 400 Bad Request
 // response and a JSON payload describing the errors.
-// Middleware still on the stack will not even see the request
+// Middleware remaining on the stack will not even see the request
 // if, by this point, there are any errors.
 // This is a "default" handler, of sorts, and you are
 // welcome to use your own instead. The Bind middleware
 // invokes this automatically for convenience.
-func ErrorHandler() martini.Handler {
-	return func(context martini.Context, req *http.Request, resp http.ResponseWriter) {
-		errs := getErrors(context)
-
-		if errs.Count() > 0 {
-			resp.WriteHeader(http.StatusBadRequest)
-			errOutput, _ := json.Marshal(errs)
-			resp.Write(errOutput)
-			return
-		}
+func ErrorHandler(errs Errors, resp http.ResponseWriter) {
+	if errs.Count() > 0 {
+		resp.WriteHeader(http.StatusBadRequest)
+		errOutput, _ := json.Marshal(errs)
+		resp.Write(errOutput)
+		return
 	}
 }
 
@@ -267,6 +253,16 @@ func ensureNotPointer(obj interface{}) {
 	if reflect.TypeOf(obj).Kind() == reflect.Ptr {
 		panic("Pointers are not accepted as binding models")
 	}
+}
+
+// Performs validation and combines errors from validation
+// with errors from deserialization, then maps both the
+// resulting struct and the errors to the context.
+func validateAndMap(obj reflect.Value, context martini.Context, errors *Errors) {
+	context.Invoke(Validate(obj.Interface()))
+	errors.combine(getErrors(context))
+	context.Map(*errors)
+	context.Map(obj.Elem().Interface())
 }
 
 func newErrors() *Errors {
