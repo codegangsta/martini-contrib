@@ -63,7 +63,8 @@ func Renderer(dir string) martini.Handler {
 		if martini.Env == martini.Dev {
 			t = compile(dir)
 		}
-		c.MapTo(&renderer{res, t}, (*Render)(nil))
+    tc, _ := t.Clone()
+		c.MapTo(&renderer{res, tc}, (*Render)(nil))
 	}
 }
 
@@ -86,8 +87,15 @@ func compile(dir string) *template.Template {
 
 			name := (r[0 : len(r)-len(ext)])
 			tmpl := t.New(filepath.ToSlash(name))
+
+      fm := template.FuncMap {
+        "yield" : func() string {
+          return "nope"
+        },
+      }
+
 			// Bomb out if parse fails. We don't want any silent server starts.
-			template.Must(tmpl.Parse(string(buf)))
+			template.Must(tmpl.Funcs(fm).Parse(string(buf)))
 		}
 
 		return nil
@@ -115,8 +123,18 @@ func (r *renderer) JSON(status int, v interface{}) {
 }
 
 func (r *renderer) HTML(status int, name string, binding interface{}) {
+  fm := template.FuncMap {
+    "yield" : func() string {
+      var buf bytes.Buffer
+      if err := r.t.ExecuteTemplate(&buf, name, binding); err != nil {
+        return "nope"
+      }
+      return buf.String()
+    },
+  }
+  r.t.Funcs(fm)
 	var buf bytes.Buffer
-	if err := r.t.ExecuteTemplate(&buf, name, binding); err != nil {
+	if err := r.t.ExecuteTemplate(&buf, "layout", binding); err != nil {
 		http.Error(r, err.Error(), 500)
 		return
 	}
