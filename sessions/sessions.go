@@ -108,13 +108,13 @@ func (s *session) Set(key interface{}, val interface{}) {
 }
 
 func (s *session) AddFlash(value interface{}, vars ...string) {
-  s.Session().AddFlash(value, vars...)
-  s.written = true
+	s.Session().AddFlash(value, vars...)
+	s.written = true
 }
 
 func (s *session) Flashes(vars ...string) []interface{} {
-  s.written = true
-  return s.Session().Flashes(vars...)
+	s.written = true
+	return s.Session().Flashes(vars...)
 }
 
 func (s *session) Session() *sessions.Session {

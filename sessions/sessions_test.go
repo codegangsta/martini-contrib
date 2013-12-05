@@ -42,12 +42,12 @@ func Test_Flashes(t *testing.T) {
 	m.Use(Sessions("my_session", store))
 
 	m.Get("/set", func(session Session) string {
-    session.AddFlash("hello world")
+		session.AddFlash("hello world")
 		return "OK"
 	})
 
 	m.Get("/show", func(session Session) string {
-    l := len(session.Flashes())
+		l := len(session.Flashes())
 		if l != 1 {
 			t.Error("Flashes count does not equal 1. Equals ", l)
 		}
@@ -55,7 +55,7 @@ func Test_Flashes(t *testing.T) {
 	})
 
 	m.Get("/showagain", func(session Session) string {
-    l := len(session.Flashes())
+		l := len(session.Flashes())
 		if l != 0 {
 			t.Error("flashes count is not 0 after reading. Equals ", l)
 		}
