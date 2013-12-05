@@ -60,11 +60,11 @@ type Session interface {
 	// AddFlash adds a flash message to the session.
 	// A single variadic argument is accepted, and it is optional: it defines the flash key.
 	// If not defined "_flash" is used by default.
-	//AddFlash(value interface{}, vars ...string)
+	AddFlash(value interface{}, vars ...string)
 	// Flashes returns a slice of flash messages from the session.
 	// A single variadic argument is accepted, and it is optional: it defines the flash key.
 	// If not defined "_flash" is used by default.
-	//Flashes(vars ...string) []interface{}
+	Flashes(vars ...string) []interface{}
 }
 
 // Sessions is a Middleware that maps a session.Session service into the Martini handler chain.
@@ -105,6 +105,16 @@ func (s *session) Get(key interface{}) interface{} {
 func (s *session) Set(key interface{}, val interface{}) {
 	s.Session().Values[key] = val
 	s.written = true
+}
+
+func (s *session) AddFlash(value interface{}, vars ...string) {
+  s.Session().AddFlash(value, vars...)
+  s.written = true
+}
+
+func (s *session) Flashes(vars ...string) []interface{} {
+  s.written = true
+  return s.Session().Flashes(vars...)
 }
 
 func (s *session) Session() *sessions.Session {
