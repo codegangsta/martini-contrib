@@ -109,7 +109,9 @@ func (s *session) Set(key interface{}, val interface{}) {
 
 func (s *session) Session() *sessions.Session {
 	if s.session == nil {
-		s.session, _ = s.store.Get(s.request, s.name)
+		var err error
+		s.session, err = s.store.Get(s.request, s.name)
+		check(err, s.logger)
 	}
 
 	return s.session
