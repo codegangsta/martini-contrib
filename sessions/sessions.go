@@ -71,34 +71,64 @@ type Session interface {
 // Sessions can use a number of storage solutions with the given store.
 func Sessions(name string, store Store) martini.Handler {
 	return func(res http.ResponseWriter, r *http.Request, c martini.Context, l *log.Logger) {
-		s, err := store.Get(r, name)
+		// Map to the Session interface
+		s := &session{name, r, l, store, nil, false}
+		c.MapTo(s, (*Session)(nil))
+
 		// clear the context, we don't need to use
 		// gorilla context and we don't want memory leaks
 		defer context.Clear(r)
 
-		check(err, l)
-
-		// Map to the Session interface
-		c.MapTo(&session{s}, (*Session)(nil))
-
 		// Use before hook to save out the session
 		rw := res.(martini.ResponseWriter)
 		rw.Before(func(martini.ResponseWriter) {
-			check(s.Save(r, res), l)
+			if s.Written() {
+				check(s.Session().Save(r, res), l)
+			}
 		})
 	}
 }
 
 type session struct {
-	*sessions.Session
+	name    string
+	request *http.Request
+	logger  *log.Logger
+	store   Store
+	session *sessions.Session
+	written bool
 }
 
 func (s *session) Get(key interface{}) interface{} {
-	return s.Session.Values[key]
+	return s.Session().Values[key]
 }
 
 func (s *session) Set(key interface{}, val interface{}) {
-	s.Session.Values[key] = val
+	s.Session().Values[key] = val
+	s.written = true
+}
+
+func (s *session) AddFlash(value interface{}, vars ...string) {
+	s.Session().AddFlash(value, vars...)
+	s.written = true
+}
+
+func (s *session) Flashes(vars ...string) []interface{} {
+	s.written = true
+	return s.Session().Flashes(vars...)
+}
+
+func (s *session) Session() *sessions.Session {
+	if s.session == nil {
+		var err error
+		s.session, err = s.store.Get(s.request, s.name)
+		check(err, s.logger)
+	}
+
+	return s.session
+}
+
+func (s *session) Written() bool {
+	return s.written
 }
 
 func check(err error, l *log.Logger) {
