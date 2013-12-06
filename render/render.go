@@ -33,12 +33,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 const (
-	ContentType = "Content-Type"
-	ContentJSON = "application/json"
-	ContentHTML = "text/html"
+	ContentType   = "Content-Type"
+	ContentLength = "Content-Length"
+	ContentJSON   = "application/json"
+	ContentHTML   = "text/html"
 )
 
 // Included helper functions for use when rendering html
@@ -183,8 +185,9 @@ func (r *renderer) HTML(status int, name string, binding interface{}) {
 
 	// template rendered fine, write out the result
 	r.Header().Set(ContentType, ContentHTML)
+	r.Header().Set(ContentLength, strconv.Itoa(out.Len()))
 	r.WriteHeader(status)
-	r.Write([]byte(out))
+	r.Write(out.Bytes())
 }
 
 // Error writes the given HTTP status to the current ResponseWriter
@@ -192,18 +195,17 @@ func (r *renderer) Error(status int) {
 	r.WriteHeader(status)
 }
 
-func (r *renderer) execute(name string, binding interface{}) (string, error) {
-	var buf bytes.Buffer
-	err := r.t.ExecuteTemplate(&buf, name, binding)
-	return buf.String(), err
+func (r *renderer) execute(name string, binding interface{}) (*bytes.Buffer, error) {
+	buf := new(bytes.Buffer)
+	return buf, r.t.ExecuteTemplate(buf, name, binding)
 }
 
 func (r *renderer) addYield(name string, binding interface{}) {
 	funcs := template.FuncMap{
 		"yield": func() (template.HTML, error) {
-			html, err := r.execute(name, binding)
+			buf, err := r.execute(name, binding)
 			// return safe html here since we are rendering our own template
-			return template.HTML(html), err
+			return template.HTML(buf.String()), err
 		},
 	}
 	r.t.Funcs(funcs)
