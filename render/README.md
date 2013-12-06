@@ -34,5 +34,19 @@ func main() {
 <h2>Hello {{.}}!</h2>
 ~~~
 
+### Options
+`render.Renderer` comes with a variety of configuration options:
+
+~~~ go
+// ...
+m.Use(render.Renderer(render.Options{
+  Directory: "templates", // specify what path to load the templates from
+  Layout: "layout", // specify a layout template. Layouts can call {{ yield }} to render the current template.
+  Extensions: []string{".tmpl", ".html"}, // Specify extensions to load for templates
+  Funcs: []template.FuncMap{AppHelpers}, // Specify helper function maps for templates to access.
+}))
+// ...
+~~~
+
 ## Authors
 * [Jeremy Saenz](http://github.com/codegangsta)
