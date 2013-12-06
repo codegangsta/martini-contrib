@@ -96,8 +96,6 @@ func prepareOptions(options []Options) Options {
 	var opt Options
 	if len(options) > 0 {
 		opt = options[0]
-	} else {
-		opt = Options{}
 	}
 
 	// Defaults
