@@ -48,5 +48,28 @@ m.Use(render.Renderer(render.Options{
 // ...
 ~~~
 
+### Layouts
+`render.Renderer` provides a `yield` function for layouts to access:
+~~~ go
+// ...
+m.Use(render.Renderer(render.Options{
+  Layout: "layout",
+}))
+// ...
+~~~
+
+~~~ html
+<!-- layout.tmpl -->
+<html>
+  <head>
+    <title>Martini Plz</title>
+  </head>
+  <body>
+    <!-- Render the current template here -->
+    {{ yield }}
+  </body>
+</html>
+~~~
+
 ## Authors
 * [Jeremy Saenz](http://github.com/codegangsta)
