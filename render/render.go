@@ -29,6 +29,7 @@ import (
 	"fmt"
 	"github.com/codegangsta/martini"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -185,7 +186,7 @@ func (r *renderer) HTML(status int, name string, binding interface{}) {
 	r.Header().Set(ContentType, ContentHTML)
 	r.Header().Set(ContentLength, strconv.Itoa(out.Len()))
 	r.WriteHeader(status)
-	r.Write(out.Bytes())
+	io.Copy(r, out)
 }
 
 // Error writes the given HTTP status to the current ResponseWriter
