@@ -59,11 +59,16 @@ type Render interface {
 	Error(status int)
 }
 
+// Options is a struct for specifying configuration options for the render.Renderer middleware
 type Options struct {
-	Directory  string
-	Layout     string
+	// Directory to load templates. Default is "templates"
+	Directory string
+	// Layout template name. Will not render a layout if "". Defaults to "".
+	Layout string
+	// Extensions to parse template files from. Defaults to [".tmpl"]
 	Extensions []string
-	Funcs      []template.FuncMap
+	// Funcs is a slice of FuncMaps to apply to the template upon compilation. This is useful for helper functions. Defaults to [].
+	Funcs []template.FuncMap
 }
 
 // Renderer is a Middleware that maps a render.Render service into the Martini handler chain. Renderer will compile templates
@@ -181,6 +186,7 @@ func (r *renderer) HTML(status int, name string, binding interface{}) {
 	r.Write([]byte(out))
 }
 
+// Error writes the given HTTP status to the current ResponseWriter
 func (r *renderer) Error(status int) {
 	r.WriteHeader(status)
 }
