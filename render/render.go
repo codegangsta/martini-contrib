@@ -94,8 +94,8 @@ func prepareOptions(options []Options) Options {
 func compile(options Options) *template.Template {
 	dir := options.Directory
 	t := template.New(dir)
-  // parse an initial template in case we don't have any
-  template.Must(t.Parse("Martini"))
+	// parse an initial template in case we don't have any
+	template.Must(t.Parse("Martini"))
 
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		r, err := filepath.Rel(dir, path)
