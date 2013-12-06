@@ -15,7 +15,7 @@ type Greeting struct {
 
 func Test_Render_JSON(t *testing.T) {
 	m := martini.Classic()
-  m.Use(Renderer())
+	m.Use(Renderer())
 
 	// routing
 	m.Get("/foobar", func(r Render) {
@@ -34,9 +34,9 @@ func Test_Render_JSON(t *testing.T) {
 
 func Test_Render_HTML(t *testing.T) {
 	m := martini.Classic()
-  m.Use(Renderer(Options{
-    Directory: "fixtures",
-  }))
+	m.Use(Renderer(Options{
+		Directory: "fixtures",
+	}))
 
 	// routing
 	m.Get("/foobar", func(r Render) {
@@ -55,9 +55,9 @@ func Test_Render_HTML(t *testing.T) {
 
 func Test_Render_Nested_HTML(t *testing.T) {
 	m := martini.Classic()
-  m.Use(Renderer(Options{
-    Directory: "fixtures",
-  }))
+	m.Use(Renderer(Options{
+		Directory: "fixtures",
+	}))
 
 	// routing
 	m.Get("/foobar", func(r Render) {
