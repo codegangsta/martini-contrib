@@ -9,7 +9,7 @@
 //
 //  func main() {
 //    m := martini.Classic()
-//    m.Use(render.Renderer("templates"))
+//    m.Use(render.Renderer()) // reads "templates" directory by default
 //
 //    m.Get("/html", func(r render.Render) {
 //      r.HTML(200, "mytemplate", nil)
