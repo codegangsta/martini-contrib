@@ -55,6 +55,7 @@ type Render interface {
 
 type Options struct {
 	Directory string
+	Layout    string
 }
 
 // Renderer is a Middleware that maps a render.Render service into the Martini handler chain. Renderer will compile templates
@@ -71,7 +72,7 @@ func Renderer(options ...Options) martini.Handler {
 			t = compile(opt)
 		}
 		tc, _ := t.Clone()
-		c.MapTo(&renderer{res, tc}, (*Render)(nil))
+		c.MapTo(&renderer{res, tc, opt}, (*Render)(nil))
 	}
 }
 
@@ -133,6 +134,7 @@ func compile(options Options) *template.Template {
 type renderer struct {
 	http.ResponseWriter
 	t *template.Template
+  opt Options
 }
 
 func (r *renderer) JSON(status int, v interface{}) {
@@ -149,28 +151,38 @@ func (r *renderer) JSON(status int, v interface{}) {
 }
 
 func (r *renderer) HTML(status int, name string, binding interface{}) {
-	// fm := template.FuncMap{
-	// 	"yield": func() string {
-	// 		var buf bytes.Buffer
-	// 		if err := r.t.ExecuteTemplate(&buf, name, binding); err != nil {
-	// 			return "nope"
-	// 		}
-	// 		return buf.String()
-	// 	},
-	// }
-	// r.t.Funcs(fm)
-	var buf bytes.Buffer
-	if err := r.t.ExecuteTemplate(&buf, name, binding); err != nil {
-		http.Error(r, err.Error(), 500)
-		return
+  // assign a layout if there is one
+  if len(r.opt.Layout) > 0 {
+    r.addYield(name, binding)
+    name = r.opt.Layout
+  }
+
+	out, err := r.execute(name, binding)
+	if err != nil {
+		http.Error(r, err.Error(), http.StatusInternalServerError)
 	}
 
 	// template rendered fine, write out the result
 	r.Header().Set(ContentType, ContentHTML)
 	r.WriteHeader(status)
-	r.Write(buf.Bytes())
+	r.Write([]byte(out))
 }
 
 func (r *renderer) Error(status int) {
 	r.WriteHeader(status)
+}
+
+func (r *renderer) execute(name string, binding interface{}) (string, error) {
+	var buf bytes.Buffer
+	err := r.t.ExecuteTemplate(&buf, name, binding)
+	return buf.String(), err
+}
+
+func (r *renderer) addYield(name string, binding interface{}) {
+	funcs := template.FuncMap{
+		"yield": func() (string, error) {
+			return r.execute(name, binding)
+		},
+	}
+	r.t.Funcs(funcs)
 }
