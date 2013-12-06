@@ -38,8 +38,6 @@ const (
 	ContentType = "Content-Type"
 	ContentJSON = "application/json"
 	ContentHTML = "text/html"
-
-	defaultDirectory = "templates"
 )
 
 // Render is a service that can be injected into a Martini handler. Render provides functions for easily writing JSON and
@@ -54,8 +52,9 @@ type Render interface {
 }
 
 type Options struct {
-	Directory string
-	Layout    string
+	Directory  string
+	Layout     string
+	Extensions []string
 }
 
 // Renderer is a Middleware that maps a render.Render service into the Martini handler chain. Renderer will compile templates
@@ -85,8 +84,11 @@ func prepareOptions(options []Options) Options {
 	}
 
 	// Defaults
-	if opt.Directory == "" {
-		opt.Directory = defaultDirectory
+	if len(opt.Directory) == 0 {
+		opt.Directory = "templates"
+	}
+	if len(opt.Extensions) == 0 {
+		opt.Extensions = []string{".tmpl"}
 	}
 
 	return opt
@@ -105,24 +107,27 @@ func compile(options Options) *template.Template {
 		}
 
 		ext := filepath.Ext(r)
-		if ext == ".tmpl" {
+		for _, extension := range options.Extensions {
+			if ext == extension {
 
-			buf, err := ioutil.ReadFile(path)
-			if err != nil {
-				panic(err)
+				buf, err := ioutil.ReadFile(path)
+				if err != nil {
+					panic(err)
+				}
+
+				name := (r[0 : len(r)-len(ext)])
+				tmpl := t.New(filepath.ToSlash(name))
+
+				fm := template.FuncMap{
+					"yield": func() string {
+						return "nope"
+					},
+				}
+
+				// Bomb out if parse fails. We don't want any silent server starts.
+				template.Must(tmpl.Funcs(fm).Parse(string(buf)))
+				break
 			}
-
-			name := (r[0 : len(r)-len(ext)])
-			tmpl := t.New(filepath.ToSlash(name))
-
-			fm := template.FuncMap{
-				"yield": func() string {
-					return "nope"
-				},
-			}
-
-			// Bomb out if parse fails. We don't want any silent server starts.
-			template.Must(tmpl.Funcs(fm).Parse(string(buf)))
 		}
 
 		return nil
@@ -133,8 +138,8 @@ func compile(options Options) *template.Template {
 
 type renderer struct {
 	http.ResponseWriter
-	t *template.Template
-  opt Options
+	t   *template.Template
+	opt Options
 }
 
 func (r *renderer) JSON(status int, v interface{}) {
@@ -151,11 +156,11 @@ func (r *renderer) JSON(status int, v interface{}) {
 }
 
 func (r *renderer) HTML(status int, name string, binding interface{}) {
-  // assign a layout if there is one
-  if len(r.opt.Layout) > 0 {
-    r.addYield(name, binding)
-    name = r.opt.Layout
-  }
+	// assign a layout if there is one
+	if len(r.opt.Layout) > 0 {
+		r.addYield(name, binding)
+		name = r.opt.Layout
+	}
 
 	out, err := r.execute(name, binding)
 	if err != nil {

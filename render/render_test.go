@@ -53,6 +53,28 @@ func Test_Render_HTML(t *testing.T) {
 	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>\n")
 }
 
+func Test_Render_Extensions(t *testing.T) {
+	m := martini.Classic()
+	m.Use(Renderer(Options{
+		Directory:  "fixtures",
+		Extensions: []string{".tmpl", ".html"},
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.HTML(200, "hypertext", nil)
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Code, 200)
+	expect(t, res.Header().Get(ContentType), ContentHTML)
+	expect(t, res.Body.String(), "Hypertext!\n")
+}
+
 func Test_Render_Layout(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
