@@ -2,6 +2,7 @@ package render
 
 import (
 	"github.com/codegangsta/martini"
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -15,7 +16,9 @@ type Greeting struct {
 
 func Test_Render_JSON(t *testing.T) {
 	m := martini.Classic()
-	m.Use(Renderer("fixtures"))
+	m.Use(Renderer(Options{
+	// nothing here to configure
+	}))
 
 	// routing
 	m.Get("/foobar", func(r Render) {
@@ -34,7 +37,9 @@ func Test_Render_JSON(t *testing.T) {
 
 func Test_Render_HTML(t *testing.T) {
 	m := martini.Classic()
-	m.Use(Renderer("fixtures"))
+	m.Use(Renderer(Options{
+		Directory: "fixtures/basic",
+	}))
 
 	// routing
 	m.Get("/foobar", func(r Render) {
@@ -51,9 +56,80 @@ func Test_Render_HTML(t *testing.T) {
 	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>\n")
 }
 
+func Test_Render_Extensions(t *testing.T) {
+	m := martini.Classic()
+	m.Use(Renderer(Options{
+		Directory:  "fixtures/basic",
+		Extensions: []string{".tmpl", ".html"},
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.HTML(200, "hypertext", nil)
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Code, 200)
+	expect(t, res.Header().Get(ContentType), ContentHTML)
+	expect(t, res.Body.String(), "Hypertext!\n")
+}
+
+func Test_Render_Funcs(t *testing.T) {
+
+	m := martini.Classic()
+	m.Use(Renderer(Options{
+		Directory: "fixtures/custom_funcs",
+		Funcs: []template.FuncMap{
+			{
+				"myCustomFunc": func() string {
+					return "My custom function"
+				},
+			},
+		},
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.HTML(200, "index", "jeremy")
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Body.String(), "My custom function\n")
+}
+
+func Test_Render_Layout(t *testing.T) {
+	m := martini.Classic()
+	m.Use(Renderer(Options{
+		Directory: "fixtures/basic",
+		Layout:    "layout",
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.HTML(200, "content", "jeremy")
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Body.String(), "head\n<h1>jeremy</h1>\n\nfoot\n")
+}
+
 func Test_Render_Nested_HTML(t *testing.T) {
 	m := martini.Classic()
-	m.Use(Renderer("fixtures"))
+	m.Use(Renderer(Options{
+		Directory: "fixtures/basic",
+	}))
 
 	// routing
 	m.Get("/foobar", func(r Render) {
@@ -72,14 +148,14 @@ func Test_Render_Nested_HTML(t *testing.T) {
 
 func Test_Render_Error404(t *testing.T) {
 	res := httptest.NewRecorder()
-	r := renderer{res, nil}
+	r := renderer{res, nil, Options{}}
 	r.Error(404)
 	expect(t, res.Code, 404)
 }
 
 func Test_Render_Error500(t *testing.T) {
 	res := httptest.NewRecorder()
-	r := renderer{res, nil}
+	r := renderer{res, nil, Options{}}
 	r.Error(500)
 	expect(t, res.Code, 500)
 }
