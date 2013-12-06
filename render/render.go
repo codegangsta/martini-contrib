@@ -38,6 +38,8 @@ const (
 	ContentType = "Content-Type"
 	ContentJSON = "application/json"
 	ContentHTML = "text/html"
+
+	defaultDirectory = "templates"
 )
 
 // Render is a service that can be injected into a Martini handler. Render provides functions for easily writing JSON and
@@ -51,24 +53,46 @@ type Render interface {
 	Error(status int)
 }
 
+type Options struct {
+	Directory string
+}
+
 // Renderer is a Middleware that maps a render.Render service into the Martini handler chain. Renderer will compile templates
 // globbed in the given dir. Templates must have the .tmpl extension to be compiled.
 //
 // If MARTINI_ENV is set to "" or "development" then templates will be recompiled on every request. For more performance, set the
 // MARTINI_ENV environment variable to "production"
-func Renderer(dir string) martini.Handler {
-	t := compile(dir)
+func Renderer(options ...Options) martini.Handler {
+	opt := prepareOptions(options)
+	t := compile(opt)
 	return func(res http.ResponseWriter, c martini.Context) {
 		// recompile for easy development
 		if martini.Env == martini.Dev {
-			t = compile(dir)
+			t = compile(opt)
 		}
-    tc, _ := t.Clone()
+		tc, _ := t.Clone()
 		c.MapTo(&renderer{res, tc}, (*Render)(nil))
 	}
 }
 
-func compile(dir string) *template.Template {
+func prepareOptions(options []Options) Options {
+	var opt Options
+	if len(options) > 0 {
+		opt = options[0]
+	} else {
+		opt = Options{}
+	}
+
+	// Defaults
+	if opt.Directory == "" {
+		opt.Directory = defaultDirectory
+	}
+
+	return opt
+}
+
+func compile(options Options) *template.Template {
+	dir := options.Directory
 	t := template.New(dir)
 
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -88,11 +112,11 @@ func compile(dir string) *template.Template {
 			name := (r[0 : len(r)-len(ext)])
 			tmpl := t.New(filepath.ToSlash(name))
 
-      fm := template.FuncMap {
-        "yield" : func() string {
-          return "nope"
-        },
-      }
+			fm := template.FuncMap{
+				"yield": func() string {
+					return "nope"
+				},
+			}
 
 			// Bomb out if parse fails. We don't want any silent server starts.
 			template.Must(tmpl.Funcs(fm).Parse(string(buf)))
@@ -123,16 +147,16 @@ func (r *renderer) JSON(status int, v interface{}) {
 }
 
 func (r *renderer) HTML(status int, name string, binding interface{}) {
-  fm := template.FuncMap {
-    "yield" : func() string {
-      var buf bytes.Buffer
-      if err := r.t.ExecuteTemplate(&buf, name, binding); err != nil {
-        return "nope"
-      }
-      return buf.String()
-    },
-  }
-  r.t.Funcs(fm)
+	fm := template.FuncMap{
+		"yield": func() string {
+			var buf bytes.Buffer
+			if err := r.t.ExecuteTemplate(&buf, name, binding); err != nil {
+				return "nope"
+			}
+			return buf.String()
+		},
+	}
+	r.t.Funcs(fm)
 	var buf bytes.Buffer
 	if err := r.t.ExecuteTemplate(&buf, "layout", binding); err != nil {
 		http.Error(r, err.Error(), 500)
