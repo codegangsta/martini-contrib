@@ -94,6 +94,8 @@ func prepareOptions(options []Options) Options {
 func compile(options Options) *template.Template {
 	dir := options.Directory
 	t := template.New(dir)
+  // parse an initial template in case we don't have any
+  template.Must(t.Parse("Martini"))
 
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		r, err := filepath.Rel(dir, path)
@@ -147,18 +149,18 @@ func (r *renderer) JSON(status int, v interface{}) {
 }
 
 func (r *renderer) HTML(status int, name string, binding interface{}) {
-	fm := template.FuncMap{
-		"yield": func() string {
-			var buf bytes.Buffer
-			if err := r.t.ExecuteTemplate(&buf, name, binding); err != nil {
-				return "nope"
-			}
-			return buf.String()
-		},
-	}
-	r.t.Funcs(fm)
+	// fm := template.FuncMap{
+	// 	"yield": func() string {
+	// 		var buf bytes.Buffer
+	// 		if err := r.t.ExecuteTemplate(&buf, name, binding); err != nil {
+	// 			return "nope"
+	// 		}
+	// 		return buf.String()
+	// 	},
+	// }
+	// r.t.Funcs(fm)
 	var buf bytes.Buffer
-	if err := r.t.ExecuteTemplate(&buf, "layout", binding); err != nil {
+	if err := r.t.ExecuteTemplate(&buf, name, binding); err != nil {
 		http.Error(r, err.Error(), 500)
 		return
 	}
