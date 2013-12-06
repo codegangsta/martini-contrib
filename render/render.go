@@ -26,6 +26,7 @@ package render
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/codegangsta/martini"
 	"html/template"
 	"io/ioutil"
@@ -39,6 +40,13 @@ const (
 	ContentJSON = "application/json"
 	ContentHTML = "text/html"
 )
+
+// Included helper functions for use when rendering html
+var helperFuncs = template.FuncMap{
+	"yield": func() (string, error) {
+		return "", fmt.Errorf("yield called with no layout defined")
+	},
+}
 
 // Render is a service that can be injected into a Martini handler. Render provides functions for easily writing JSON and
 // HTML templates out to a http Response.
@@ -55,6 +63,7 @@ type Options struct {
 	Directory  string
 	Layout     string
 	Extensions []string
+	Funcs      []template.FuncMap
 }
 
 // Renderer is a Middleware that maps a render.Render service into the Martini handler chain. Renderer will compile templates
@@ -118,14 +127,13 @@ func compile(options Options) *template.Template {
 				name := (r[0 : len(r)-len(ext)])
 				tmpl := t.New(filepath.ToSlash(name))
 
-				fm := template.FuncMap{
-					"yield": func() string {
-						return "nope"
-					},
+				// add our funcmaps
+				for _, funcs := range options.Funcs {
+					tmpl.Funcs(funcs)
 				}
 
 				// Bomb out if parse fails. We don't want any silent server starts.
-				template.Must(tmpl.Funcs(fm).Parse(string(buf)))
+				template.Must(tmpl.Funcs(helperFuncs).Parse(string(buf)))
 				break
 			}
 		}

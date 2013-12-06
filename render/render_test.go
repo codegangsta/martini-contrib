@@ -2,6 +2,7 @@ package render
 
 import (
 	"github.com/codegangsta/martini"
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -35,7 +36,7 @@ func Test_Render_JSON(t *testing.T) {
 func Test_Render_HTML(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
-		Directory: "fixtures",
+		Directory: "fixtures/basic",
 	}))
 
 	// routing
@@ -56,7 +57,7 @@ func Test_Render_HTML(t *testing.T) {
 func Test_Render_Extensions(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
-		Directory:  "fixtures",
+		Directory:  "fixtures/basic",
 		Extensions: []string{".tmpl", ".html"},
 	}))
 
@@ -75,10 +76,37 @@ func Test_Render_Extensions(t *testing.T) {
 	expect(t, res.Body.String(), "Hypertext!\n")
 }
 
+func Test_Render_Funcs(t *testing.T) {
+
+	m := martini.Classic()
+	m.Use(Renderer(Options{
+		Directory: "fixtures/custom_funcs",
+		Funcs: []template.FuncMap{
+			{
+				"myCustomFunc": func() string {
+					return "My custom function"
+				},
+			},
+		},
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.HTML(200, "index", "jeremy")
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Body.String(), "My custom function\n")
+}
+
 func Test_Render_Layout(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
-		Directory: "fixtures",
+		Directory: "fixtures/basic",
 		Layout:    "layout",
 	}))
 
@@ -98,7 +126,7 @@ func Test_Render_Layout(t *testing.T) {
 func Test_Render_Nested_HTML(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
-		Directory: "fixtures",
+		Directory: "fixtures/basic",
 	}))
 
 	// routing
