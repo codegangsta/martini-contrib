@@ -16,7 +16,9 @@ type Greeting struct {
 
 func Test_Render_JSON(t *testing.T) {
 	m := martini.Classic()
-	m.Use(Renderer())
+	m.Use(Renderer(Options{
+	// nothing here to configure
+	}))
 
 	// routing
 	m.Get("/foobar", func(r Render) {
