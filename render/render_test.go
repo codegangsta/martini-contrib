@@ -120,7 +120,7 @@ func Test_Render_Layout(t *testing.T) {
 
 	m.ServeHTTP(res, req)
 
-	expect(t, res.Body.String(), "head\njeremy\n\nfoot\n")
+	expect(t, res.Body.String(), "head\n<h1>jeremy</h1>\n\nfoot\n")
 }
 
 func Test_Render_Nested_HTML(t *testing.T) {

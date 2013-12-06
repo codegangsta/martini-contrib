@@ -199,8 +199,10 @@ func (r *renderer) execute(name string, binding interface{}) (string, error) {
 
 func (r *renderer) addYield(name string, binding interface{}) {
 	funcs := template.FuncMap{
-		"yield": func() (string, error) {
-			return r.execute(name, binding)
+		"yield": func() (template.HTML, error) {
+			html, err := r.execute(name, binding)
+			// return safe html here since we are rendering our own template
+			return template.HTML(html), err
 		},
 	}
 	r.t.Funcs(funcs)
