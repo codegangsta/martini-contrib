@@ -71,8 +71,9 @@ type Options struct {
 	Funcs []template.FuncMap
 }
 
-// Renderer is a Middleware that maps a render.Render service into the Martini handler chain. Renderer will compile templates
-// globbed in the given dir. Templates must have the .tmpl extension to be compiled.
+// Renderer is a Middleware that maps a render.Render service into the Martini handler chain. An single variadic render.Options
+// struct can be optionally provided to configure HTML rendering. The default directory for templates is "templates" and the default
+// file extension is ".tmpl".
 //
 // If MARTINI_ENV is set to "" or "development" then templates will be recompiled on every request. For more performance, set the
 // MARTINI_ENV environment variable to "production"
