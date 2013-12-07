@@ -63,6 +63,19 @@ type BlogPost struct {
 	Views   int    `form:"views" json:"views"`
 }
 
+// This method implements binding.Validator and is executed by the binding.Validate middleware
+func (bp BlogPost) Validate(errors *Errors, req *http.Request) {
+        if len(bp.Title) < 4 {
+                errors.Fields["title"] = "Too short; minimum 4 characters"
+        }
+        else if len(bp.Title) > 120 {
+        	errors.Fields["title"] = "Too long; maximum 120 characters"
+        }
+        if bp.Views < 0 {
+        	errors.Fields["views"] = "Views must be at least 0"
+        }
+}
+
 func main() {
 	m := martini.Classic()
 
