@@ -68,15 +68,15 @@ func (bp BlogPost) Validate(errors *Errors, req *http.Request) {
 	if req.Header().Get("X-Custom-Thing") == "" {
 		errors.Overall["x-custom-thing"] = "The X-Custom-Thing header is required"
 	}
-        if len(bp.Title) < 4 {
-                errors.Fields["title"] = "Too short; minimum 4 characters"
-        }
-        else if len(bp.Title) > 120 {
-        	errors.Fields["title"] = "Too long; maximum 120 characters"
-        }
-        if bp.Views < 0 {
-        	errors.Fields["views"] = "Views must be at least 0"
-        }
+	if len(bp.Title) < 4 {
+		errors.Fields["title"] = "Too short; minimum 4 characters"
+	}
+	else if len(bp.Title) > 120 {
+		errors.Fields["title"] = "Too long; maximum 120 characters"
+	}
+	if bp.Views < 0 {
+		errors.Fields["views"] = "Views must be at least 0"
+	}
 }
 
 func main() {
