@@ -141,7 +141,8 @@ func Validate(obj interface{}) martini.Handler {
 
 // ErrorHandler simply counts the number of errors in the
 // context and, if more than 0, writes a 400 Bad Request
-// response and a JSON payload describing the errors.
+// response and a JSON payload describing the errors with
+// the "Content-Type" set to "application/json".
 // Middleware remaining on the stack will not even see the request
 // if, by this point, there are any errors.
 // This is a "default" handler, of sorts, and you are
@@ -149,6 +150,7 @@ func Validate(obj interface{}) martini.Handler {
 // invokes this automatically for convenience.
 func ErrorHandler(errs Errors, resp http.ResponseWriter) {
 	if errs.Count() > 0 {
+		resp.Header().Set("Content-Type", "application/json; charset=utf-8")
 		resp.WriteHeader(http.StatusBadRequest)
 		errOutput, _ := json.Marshal(errs)
 		resp.Write(errOutput)
