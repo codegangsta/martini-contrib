@@ -25,16 +25,3 @@ func TestFaviconHandler(t *testing.T) {
 		t.Error("Cache-Control Header is not correct")
 	}
 }
-
-func BenchmarkHello(b *testing.B) {
-	m := martini.Classic()
-	m.Use(Handler("favicon.ico", 86400000))
-	recorder := httptest.NewRecorder()
-	r, err := http.NewRequest("GET", "/favicon.ico", nil)
-	if err != nil {
-		b.Error(err)
-	}
-	for i := 0; i < b.N; i++ {
-		m.ServeHTTP(recorder, r)
-	}
-}
