@@ -74,7 +74,7 @@ type Options struct {
 	Funcs []template.FuncMap
 	// Left delimiter, defaults to {{
 	DelimLeft string
-	// Right delimiter, defaults to {{
+	// Right delimiter, defaults to }}
 	DelimRight string
 }
 
