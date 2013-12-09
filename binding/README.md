@@ -64,7 +64,7 @@ type BlogPost struct {
 }
 
 // This method implements binding.Validator and is executed by the binding.Validate middleware
-func (bp BlogPost) Validate(errors *Errors, req *http.Request) {
+func (bp BlogPost) Validate(errors *binding.Errors, req *http.Request) {
 	if req.Header().Get("X-Custom-Thing") == "" {
 		errors.Overall["x-custom-thing"] = "The X-Custom-Thing header is required"
 	}
