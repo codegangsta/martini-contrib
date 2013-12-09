@@ -72,6 +72,10 @@ type Options struct {
 	Extensions []string
 	// Funcs is a slice of FuncMaps to apply to the template upon compilation. This is useful for helper functions. Defaults to [].
 	Funcs []template.FuncMap
+	// Left delimiter, defaults to {{
+	DelimLeft string
+	// Right delimiter, defaults to {{
+	DelimRight string
 }
 
 // Renderer is a Middleware that maps a render.Render service into the Martini handler chain. An single variadic render.Options
@@ -113,6 +117,7 @@ func prepareOptions(options []Options) Options {
 func compile(options Options) *template.Template {
 	dir := options.Directory
 	t := template.New(dir)
+	t.Delims(options.DelimLeft, options.DelimRight)
 	// parse an initial template in case we don't have any
 	template.Must(t.Parse("Martini"))
 
