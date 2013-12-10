@@ -24,6 +24,14 @@ func main() {
     r.HTML(200, "hello", "jeremy")
   })
 
+  m.Get("/", func(r render.Render) {
+    r.JSON(200, "jeremy")
+  })
+
+  m.Get("/", func(r render.Render) {
+    r.AUTO(200, "hello", "jeremy")
+  })
+
   m.Run()
 }
 
