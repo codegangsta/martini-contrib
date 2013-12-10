@@ -14,6 +14,36 @@ type Greeting struct {
 	Two string `json:"two"`
 }
 
+func Test_Render_AUTO(t *testing.T) {
+	m := martini.Classic()
+	m.Use(Renderer(Options{
+		Directory: "fixtures/basic",
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.AUTO(200, "hello", "world")
+	})
+
+	res := httptest.NewRecorder()
+	jsonReq, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, jsonReq)
+
+	expect(t, res.Code, 200)
+	expect(t, res.Header().Get(ContentType), ContentJSON)
+	expect(t, res.Body.String(), `"world"`)
+
+	res = httptest.NewRecorder()
+	htmlReq, _ := http.NewRequest("GET", "/foobar?format=html", nil)
+
+	m.ServeHTTP(res, htmlReq)
+
+	expect(t, res.Code, 200)
+	expect(t, res.Header().Get(ContentType), ContentHTML)
+	expect(t, res.Body.String(), "<h1>Hello world</h1>\n")
+}
+
 func Test_Render_JSON(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
@@ -148,14 +178,16 @@ func Test_Render_Nested_HTML(t *testing.T) {
 
 func Test_Render_Error404(t *testing.T) {
 	res := httptest.NewRecorder()
-	r := renderer{res, nil, Options{}}
+	req := &http.Request{}
+	r := renderer{res, req, nil, Options{}}
 	r.Error(404)
 	expect(t, res.Code, 404)
 }
 
 func Test_Render_Error500(t *testing.T) {
 	res := httptest.NewRecorder()
-	r := renderer{res, nil, Options{}}
+	req := &http.Request{}
+	r := renderer{res, req, nil, Options{}}
 	r.Error(500)
 	expect(t, res.Code, 500)
 }
