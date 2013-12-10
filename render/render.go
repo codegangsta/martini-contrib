@@ -54,6 +54,8 @@ var helperFuncs = template.FuncMap{
 // Render is a service that can be injected into a Martini handler. Render provides functions for easily writing JSON and
 // HTML templates out to a http Response.
 type Render interface {
+	// AUTO calls JSON or HTML based on the format request parameter, defaults to json. e.g. "?format=html".
+	AUTO(status int, name string, v interface{})
 	// JSON writes the given status and JSON serialized version of the given value to the http.ResponseWriter.
 	JSON(status int, v interface{})
 	// HTML renders a html template specified by the name and writes the result and given status to the http.ResponseWriter.
@@ -83,13 +85,13 @@ type Options struct {
 func Renderer(options ...Options) martini.Handler {
 	opt := prepareOptions(options)
 	t := compile(opt)
-	return func(res http.ResponseWriter, c martini.Context) {
+	return func(res http.ResponseWriter, req *http.Request, c martini.Context) {
 		// recompile for easy development
 		if martini.Env == martini.Dev {
 			t = compile(opt)
 		}
 		tc, _ := t.Clone()
-		c.MapTo(&renderer{res, tc, opt}, (*Render)(nil))
+		c.MapTo(&renderer{res, req, tc, opt}, (*Render)(nil))
 	}
 }
 
@@ -153,8 +155,18 @@ func compile(options Options) *template.Template {
 
 type renderer struct {
 	http.ResponseWriter
+	req *http.Request
 	t   *template.Template
 	opt Options
+}
+
+func (r *renderer) AUTO(status int, name string, v interface{}) {
+	if r.req.FormValue("format") == "html" {
+		r.HTML(status, name, v)
+		return
+	}
+
+	r.JSON(status, v)
 }
 
 func (r *renderer) JSON(status int, v interface{}) {
