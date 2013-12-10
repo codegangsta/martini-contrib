@@ -27,7 +27,6 @@ func Test_Render_AUTO(t *testing.T) {
 
 	res := httptest.NewRecorder()
 	jsonReq, _ := http.NewRequest("GET", "/foobar", nil)
-	htmlReq, _ := http.NewRequest("GET", "/foobar?format=html", nil)
 
 	m.ServeHTTP(res, jsonReq)
 
@@ -36,6 +35,7 @@ func Test_Render_AUTO(t *testing.T) {
 	expect(t, res.Body.String(), `"world"`)
 
 	res = httptest.NewRecorder()
+	htmlReq, _ := http.NewRequest("GET", "/foobar?format=html", nil)
 
 	m.ServeHTTP(res, htmlReq)
 
