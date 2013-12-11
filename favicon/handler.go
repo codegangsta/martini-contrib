@@ -1,12 +1,20 @@
 package favicon
 
 import (
+	"crypto/md5"
 	"fmt"
 	"github.com/codegangsta/martini"
+	"io"
 	"log"
 	"net/http"
 	"path/filepath"
 )
+
+func ComputeEtag(reader io.Reader) ([]byte, error) {
+	hash := md5.New()
+	_, err := io.Copy(hash, reader)
+	return hash.Sum(nil), err
+}
 
 // Creates a new handler that returns the favicon specified in `file` and set the `cache-control header`
 func Handler(name string, maxAge int) martini.Handler {
@@ -24,10 +32,16 @@ func Handler(name string, maxAge int) martini.Handler {
 		log.Fatal("An error occured while accessing the file stats for the favicon", err)
 	}
 
+	etag, err := ComputeEtag(favicon)
+	if err != nil {
+		log.Fatal("An error occured while trying to to compute the Etag for the favicon", err)
+	}
+
 	return func(w http.ResponseWriter, r *http.Request, log *log.Logger) {
 		if r.URL.Path == "/favicon.ico" {
-			log.Println("[favicon] Serving ")
+			log.Println("[favicon] Serving")
 			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", maxAge))
+			w.Header().Set("Etag", fmt.Sprintf("%x", etag))
 			http.ServeContent(w, r, fstat.Name(), fstat.ModTime(), favicon)
 		}
 	}
