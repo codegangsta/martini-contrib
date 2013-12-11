@@ -37,9 +37,8 @@ func Handler(name string, maxAge int) martini.Handler {
 		log.Fatal("An error occured while trying to to compute the Etag for the favicon", err)
 	}
 
-	return func(w http.ResponseWriter, r *http.Request, log *log.Logger) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/favicon.ico" {
-			log.Println("[favicon] Serving")
 			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", maxAge))
 			w.Header().Set("Etag", fmt.Sprintf("%x", etag))
 			http.ServeContent(w, r, fstat.Name(), fstat.ModTime(), favicon)
