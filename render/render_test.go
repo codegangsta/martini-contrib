@@ -146,6 +146,28 @@ func Test_Render_Nested_HTML(t *testing.T) {
 	expect(t, res.Body.String(), "<h1>Admin jeremy</h1>\n")
 }
 
+func Test_Render_Delimiters(t *testing.T){
+	m := martini.Classic()
+	m.Use(Renderer(Options{
+		Directory: "fixtures/basic",
+        Delim: Delims{"{[{", "}]}"},
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.HTML(200, "delims", "jeremy")
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Code, 200)
+	expect(t, res.Header().Get(ContentType), ContentHTML)
+	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>")
+}
+
 func Test_Render_Error404(t *testing.T) {
 	res := httptest.NewRecorder()
 	r := renderer{res, nil, Options{}}
