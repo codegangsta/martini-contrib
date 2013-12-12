@@ -62,6 +62,14 @@ type Render interface {
 	Error(status int)
 }
 
+// Sets delimiters to the specified strings for template variables.
+type Delims struct {
+	// Left delimiter, defaults to {{
+	Left string
+	// Right delimiter, defaults to }}
+	Right string
+}
+
 // Options is a struct for specifying configuration options for the render.Renderer middleware
 type Options struct {
 	// Directory to load templates. Default is "templates"
@@ -72,10 +80,8 @@ type Options struct {
 	Extensions []string
 	// Funcs is a slice of FuncMaps to apply to the template upon compilation. This is useful for helper functions. Defaults to [].
 	Funcs []template.FuncMap
-	// Left delimiter, defaults to {{
-	DelimLeft string
-	// Right delimiter, defaults to }}
-	DelimRight string
+	// Sets delimiters to the specified strings
+	Delim Delims
 }
 
 // Renderer is a Middleware that maps a render.Render service into the Martini handler chain. An single variadic render.Options
@@ -117,7 +123,7 @@ func prepareOptions(options []Options) Options {
 func compile(options Options) *template.Template {
 	dir := options.Directory
 	t := template.New(dir)
-	t.Delims(options.DelimLeft, options.DelimRight)
+	t.Delims(options.Delim.Left, options.Delim.Right)
 	// parse an initial template in case we don't have any
 	template.Must(t.Parse("Martini"))
 
