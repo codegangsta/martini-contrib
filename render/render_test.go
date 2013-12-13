@@ -150,7 +150,7 @@ func Test_Render_Delimiters(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
 		Directory: "fixtures/basic",
-		Delim:     Delims{"{[{", "}]}"},
+		Delims:    Delims{"{[{", "}]}"},
 	}))
 
 	// routing
