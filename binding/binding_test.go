@@ -112,6 +112,9 @@ func TestValidate(t *testing.T) {
 
 	performValidationTest(&BlogPost{"", "...", 0}, handlerMustErr, t)
 	performValidationTest(&BlogPost{"Good Title", "Good content", 0}, handlerNoErr, t)
+
+	performValidationTest(&User{Name: "Jim", Home: Address{"", ""}}, handlerMustErr, t)
+	performValidationTest(&User{Name: "Jim", Home: Address{"required", ""}}, handlerNoErr, t)
 }
 
 func TestTagParser(t *testing.T) {
@@ -133,10 +136,10 @@ func TestTagParser(t *testing.T) {
 	}
 }
 
-func performValidationTest(post *BlogPost, handler func(Errors), t *testing.T) {
+func performValidationTest(data interface{}, handler func(Errors), t *testing.T) {
 	recorder := httptest.NewRecorder()
 	m := martini.Classic()
-	m.Get(route, Validate(post), handler)
+	m.Get(route, Validate(data), handler)
 
 	req, err := http.NewRequest("GET", route, nil)
 	if err != nil {
@@ -172,6 +175,16 @@ type (
 		Title   string `form:"title" json:"title" required` // 'required' attribute must be at the end, or you have to do: required:""
 		Content string `form:"content" json:"content"`
 		Views   int    `form:"views" json:"views"`
+	}
+
+	User struct {
+		Name string  `json:"name" required`
+		Home Address `json:"address" required`
+	}
+
+	Address struct {
+		Street1 string `json:"street1" required`
+		Street2 string `json:"street2"`
 	}
 )
 
