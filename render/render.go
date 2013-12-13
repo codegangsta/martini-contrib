@@ -62,7 +62,7 @@ type Render interface {
 	Error(status int)
 }
 
-// Sets delimiters to the specified strings for template variables.
+// Delims represents a set of Left and Right delimiters for HTML template rendering
 type Delims struct {
 	// Left delimiter, defaults to {{
 	Left string
@@ -80,7 +80,7 @@ type Options struct {
 	Extensions []string
 	// Funcs is a slice of FuncMaps to apply to the template upon compilation. This is useful for helper functions. Defaults to [].
 	Funcs []template.FuncMap
-	// Sets delimiters to the specified strings
+	// Delims sets the action delimiters to the specified strings in the Delims struct.
 	Delim Delims
 }
 

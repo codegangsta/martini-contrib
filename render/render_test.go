@@ -146,11 +146,11 @@ func Test_Render_Nested_HTML(t *testing.T) {
 	expect(t, res.Body.String(), "<h1>Admin jeremy</h1>\n")
 }
 
-func Test_Render_Delimiters(t *testing.T){
+func Test_Render_Delimiters(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
 		Directory: "fixtures/basic",
-        Delim: Delims{"{[{", "}]}"},
+		Delim:     Delims{"{[{", "}]}"},
 	}))
 
 	// routing
