@@ -44,7 +44,7 @@ m.Use(render.Renderer(render.Options{
   Layout: "layout", // specify a layout template. Layouts can call {{ yield }} to render the current template.
   Extensions: []string{".tmpl", ".html"}, // Specify extensions to load for templates
   Funcs: []template.FuncMap{AppHelpers}, // Specify helper function maps for templates to access.
-  Delim: render.Delims{"{[{", "}]}"}, // Sets delimiters to the specified strings
+  Delims: render.Delims{"{[{", "}]}"}, // Sets delimiters to the specified strings
 }))
 // ...
 ~~~
