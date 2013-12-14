@@ -1,4 +1,4 @@
-# Contributed Martini Handlers and Utilities [![Build Status](https://drone.io/github.com/codegangsta/martini-contrib/status.png)](https://drone.io/github.com/codegangsta/martini-contrib/latest)
+# Contributed Martini Handlers and Utilities [![wercker status](https://app.wercker.com/status/6e73d91b3a2bdb85a74cd61d380248d7 "wercker status")](https://app.wercker.com/project/bykey/6e73d91b3a2bdb85a74cd61d380248d7)
 
 This package includes a variety of add-on components for Martini, a classy web framework for Go:
 
