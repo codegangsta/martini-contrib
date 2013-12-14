@@ -117,25 +117,6 @@ func TestValidate(t *testing.T) {
 	performValidationTest(&User{Name: "Jim", Home: Address{"required", ""}}, handlerNoErr, t)
 }
 
-func TestTagParser(t *testing.T) {
-	tests := map[string]bool{
-		`form:"title" json:"title" required`: true, // Putting "required" at the end like this is fine
-		`form:"title" required json:"title"`: true, // Don't use a tag like this in production
-		`required form:"title" json:"title"`: true, // Don't use a tag like this in production
-		`required`:                           true,
-		`form:"title" json:"title"`:          false,
-		``: false,
-		`form:"title" required`: true,
-	}
-
-	for input, expected := range tests {
-		actual := hasRequired(input)
-		if actual != expected {
-			t.Errorf("Expected tag `%s` to be required=%v, but got: %v", input, expected, actual)
-		}
-	}
-}
-
 func performValidationTest(data interface{}, handler func(Errors), t *testing.T) {
 	recorder := httptest.NewRecorder()
 	m := martini.Classic()
@@ -172,18 +153,18 @@ type (
 	}
 
 	BlogPost struct {
-		Title   string `form:"title" json:"title" required` // 'required' attribute must be at the end, or you have to do: required:""
+		Title   string `form:"title" json:"title" binding:"required"`
 		Content string `form:"content" json:"content"`
 		Views   int    `form:"views" json:"views"`
 	}
 
 	User struct {
-		Name string  `json:"name" required`
-		Home Address `json:"address" required`
+		Name string  `json:"name" binding:"required"`
+		Home Address `json:"address" binding:"required"`
 	}
 
 	Address struct {
-		Street1 string `json:"street1" required`
+		Street1 string `json:"street1" binding:"required"`
 		Street2 string `json:"street2"`
 	}
 )

@@ -34,9 +34,9 @@ It reads the Content-Type of the request to know how to deserialize it, or if th
 
 #### Validate
 
-`binding.Validate` receives a populated struct and checks it for errors, first by enforcing the "required" attribute on struct field tags, then by executing the `Validate()` method on the struct, if it is a `binding.Validator`. (See usage below for an example.)
+`binding.Validate` receives a populated struct and checks it for errors, first by enforcing the `binding:"required"` value on struct field tags, then by executing the `Validate()` method on the struct, if it is a `binding.Validator`. (See usage below for an example.)
 
-*Note:* The `required` attribute, which you can append to the end of a struct field tag, means that you do not allow the zero value for that type (i.e. if you want to allow 0 in an int field, do not make it required).
+*Note:* Marking a field as "required" means that you do not allow the zero value for that type (i.e. if you want to allow 0 in an int field, do not make it required).
 
 
 #### ErrorHandler
@@ -58,7 +58,7 @@ import (
  )
 
 type BlogPost struct {
-	Title   string `form:"title" json:"title" required`
+	Title   string `form:"title" json:"title" binding:"required"`
 	Content string `form:"content" json:"content"`
 	Views   int    `form:"views" json:"views"`
 }

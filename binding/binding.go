@@ -138,7 +138,7 @@ func validateStruct(errors *Errors, obj interface{}) {
 		fieldValue := val.Field(i).Interface()
 		zero := reflect.Zero(field.Type).Interface()
 
-		if hasRequired(string(field.Tag)) {
+		if strings.Index(field.Tag.Get("binding"), "required") > -1 {
 			if field.Type.Kind() == reflect.Struct {
 				validateStruct(errors, fieldValue)
 			} else if reflect.DeepEqual(zero, fieldValue) {
@@ -165,45 +165,6 @@ func ErrorHandler(errs Errors, resp http.ResponseWriter) {
 		resp.Write(errOutput)
 		return
 	}
-}
-
-// Parsing tags on our own? Madness, you say: The reflect package
-// does this for us! Well, not really. The built-in parsing
-// done by .Get() gets the value only, and doesn't detect if the
-// key is there. Example: .Get("key") is "" for both `key:""` and ``.
-// We just want to know if the 'required' key is present in the tag.
-// (The encoding/json package does something similar in tags.go.)
-func hasRequired(tag string) bool {
-	word, required := "", "required"
-	skip := false
-
-	for i := 0; i < len(tag); i++ {
-		char := tag[i]
-		letter := tag[i : i+1]
-
-		if char == '"' {
-			skip = !skip
-		}
-
-		if skip {
-			continue
-		} else if char == ' ' || char == '\t' || char == ':' { // `required:"whatever"` will still return true
-			if word == required {
-				return true
-			}
-			word = ""
-		} else {
-			word += letter
-		}
-
-		if i == len(tag)-1 {
-			if word == required {
-				return true
-			}
-		}
-	}
-
-	return false
 }
 
 // This sets the value in a struct of an indeterminate type to the
