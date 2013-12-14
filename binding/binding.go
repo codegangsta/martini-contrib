@@ -113,29 +113,38 @@ func Json(jsonStruct interface{}) martini.Handler {
 // performs no error handling: it merely detects them and maps them.
 func Validate(obj interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
-		typ := reflect.TypeOf(obj).Elem()
 		errors := newErrors()
-
-		for i := 0; i < typ.NumField(); i++ {
-			field := typ.Field(i)
-
-			zero := reflect.Zero(field.Type).Interface()
-			val := reflect.ValueOf(obj)
-			if val.Kind() == reflect.Ptr || val.Kind() == reflect.Interface {
-				val = val.Elem()
-			}
-			value := val.Field(i).Interface()
-
-			if hasRequired(string(field.Tag)) && reflect.DeepEqual(zero, value) {
-				errors.Fields[field.Name] = RequireError
-			}
-		}
+		validateStruct(errors, obj)
 
 		if validator, ok := obj.(Validator); ok {
 			validator.Validate(errors, req)
 		}
-
 		context.Map(*errors)
+
+	}
+}
+
+func validateStruct(errors *Errors, obj interface{}) {
+	typ := reflect.TypeOf(obj)
+	val := reflect.ValueOf(obj)
+
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+		val = val.Elem()
+	}
+
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		fieldValue := val.Field(i).Interface()
+		zero := reflect.Zero(field.Type).Interface()
+
+		if hasRequired(string(field.Tag)) {
+			if field.Type.Kind() == reflect.Struct {
+				validateStruct(errors, fieldValue)
+			} else if reflect.DeepEqual(zero, fieldValue) {
+				errors.Fields[field.Name] = RequireError
+			}
+		}
 	}
 }
 
