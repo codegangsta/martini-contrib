@@ -135,6 +135,12 @@ func validateStruct(errors *Errors, obj interface{}) {
 
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
+
+		// Allow ignored fields in the struct
+		if field.Tag.Get("form") == "-" {
+			continue
+		}
+
 		fieldValue := val.Field(i).Interface()
 		zero := reflect.Zero(field.Type).Interface()
 
