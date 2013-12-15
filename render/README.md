@@ -49,6 +49,27 @@ m.Use(render.Renderer(render.Options{
 // ...
 ~~~
 
+### Loading Templates
+By default the `render.Renderer` middleware will attempt to load templates with a '.tmpl' extension from the "templates" directory. Templates are found by traversing the templates directory and are named by path and basename. For instance, the following directory structure:
+
+~~~
+templates/
+  |
+  |__ admin/
+  |      |
+  |      |__ index.tmpl
+  |      |
+  |      |__ edit.tmpl
+  |
+  |__ home.tmpl
+~~~
+
+Will provide the following templates:
+~~~
+admin/index
+admin/edit
+home
+~~~
 ### Layouts
 `render.Renderer` provides a `yield` function for layouts to access:
 ~~~ go
