@@ -110,8 +110,8 @@ func TestValidate(t *testing.T) {
 		}
 	}
 
-	performValidationTest(&BlogPost{"", "...", 0}, handlerMustErr, t)
-	performValidationTest(&BlogPost{"Good Title", "Good content", 0}, handlerNoErr, t)
+	performValidationTest(&BlogPost{"", "...", 0, 0}, handlerMustErr, t)
+	performValidationTest(&BlogPost{"Good Title", "Good content", 0, 0}, handlerNoErr, t)
 
 	performValidationTest(&User{Name: "Jim", Home: Address{"", ""}}, handlerMustErr, t)
 	performValidationTest(&User{Name: "Jim", Home: Address{"required", ""}}, handlerNoErr, t)
@@ -156,6 +156,7 @@ type (
 		Title   string `form:"title" json:"title" binding:"required"`
 		Content string `form:"content" json:"content"`
 		Views   int    `form:"views" json:"views"`
+		internal int   `form:"-"`
 	}
 
 	User struct {
