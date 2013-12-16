@@ -4,8 +4,14 @@ import (
 	"github.com/gorilla/sessions"
 )
 
+// CookieStore is an interface that represents a Cookie based storage
+// for Sessions.
 type CookieStore interface {
+	// Store is an embedded interface so that CookieStore can be used
+	// as a session store.
 	Store
+	// Options sets the default options for each session stored in this
+	// CookieStore.
 	Options(Options)
 }
 
