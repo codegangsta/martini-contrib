@@ -4,6 +4,7 @@ import (
 	"github.com/codegangsta/martini"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -43,7 +44,7 @@ func Test_SessionsDeleteValue(t *testing.T) {
 
 	m.Get("/testsession", func(session Session) string {
 		session.Set("hello", "world")
-    session.Delete("hello")
+		session.Delete("hello")
 		return "OK"
 	})
 
@@ -62,6 +63,46 @@ func Test_SessionsDeleteValue(t *testing.T) {
 	req2, _ := http.NewRequest("GET", "/show", nil)
 	req2.Header.Set("Cookie", res.Header().Get("Set-Cookie"))
 	m.ServeHTTP(res2, req2)
+}
+
+func Test_Options(t *testing.T) {
+	m := martini.Classic()
+	store := NewCookieStore([]byte("secret123"))
+	store.Options(Options{
+		Domain: "martini.codegangsta.io",
+	})
+	m.Use(Sessions("my_session", store))
+
+	m.Get("/", func(session Session) string {
+		session.Set("hello", "world")
+		session.Options(Options{
+			Path: "/foo/bar/bat",
+		})
+		return "OK"
+	})
+
+	m.Get("/foo", func(session Session) string {
+		session.Set("hello", "world")
+		return "OK"
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/", nil)
+	m.ServeHTTP(res, req)
+
+	res2 := httptest.NewRecorder()
+	req2, _ := http.NewRequest("GET", "/foo", nil)
+	m.ServeHTTP(res2, req2)
+
+	s := strings.Split(res.Header().Get("Set-Cookie"), ";")
+	if s[1] != " Path=/foo/bar/bat" {
+		t.Error("Error writing path with options:", s[1])
+	}
+
+	s = strings.Split(res2.Header().Get("Set-Cookie"), ";")
+	if s[1] != " Domain=martini.codegangsta.io" {
+		t.Error("Error writing domain with options:", s[1])
+	}
 }
 
 func Test_Flashes(t *testing.T) {
