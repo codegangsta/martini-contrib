@@ -36,19 +36,18 @@ type Store interface {
 	sessions.Store
 }
 
-// NewCookieStore returns a new CookieStore.
+// Options stores configuration for a session or session store.
 //
-// Keys are defined in pairs to allow key rotation, but the common case is to set a single
-// authentication key and optionally an encryption key.
-//
-// The first key in a pair is used for authentication and the second for encryption. The
-// encryption key can be set to nil or omitted in the last pair, but the authentication key
-// is required in all pairs.
-//
-// It is recommended to use an authentication key with 32 or 64 bytes. The encryption key,
-// if set, must be either 16, 24, or 32 bytes to select AES-128, AES-192, or AES-256 modes.
-func NewCookieStore(keyPairs ...[]byte) Store {
-	return sessions.NewCookieStore(keyPairs...)
+// Fields are a subset of http.Cookie fields.
+type Options struct {
+	Path   string
+	Domain string
+	// MaxAge=0 means no 'Max-Age' attribute specified.
+	// MaxAge<0 means delete cookie now, equivalently 'Max-Age: 0'.
+	// MaxAge>0 means Max-Age attribute present and given in seconds.
+	MaxAge   int
+	Secure   bool
+	HttpOnly bool
 }
 
 // Session stores the values and optional configuration for a session.
