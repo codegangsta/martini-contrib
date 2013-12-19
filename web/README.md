@@ -18,7 +18,7 @@ package main
 
 import (
    "github.com/codegangsta/martini"
-   "github.com/Archs/martini-contrib/web"
+   "github.com/codegangsta/martini-contrib/web"
  )
 
 func main() {
