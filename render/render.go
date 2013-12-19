@@ -38,10 +38,11 @@ import (
 )
 
 const (
-	ContentType   = "Content-Type"
-	ContentLength = "Content-Length"
-	ContentJSON   = "application/json"
-	ContentHTML   = "text/html"
+	ContentType    = "Content-Type"
+	ContentLength  = "Content-Length"
+	ContentJSON    = "application/json"
+	ContentHTML    = "text/html"
+	DefaultCharset = "UTF-8"
 )
 
 // Included helper functions for use when rendering html
@@ -82,6 +83,10 @@ type Options struct {
 	Funcs []template.FuncMap
 	// Delims sets the action delimiters to the specified strings in the Delims struct.
 	Delims Delims
+	// Appends the given charset to the Content-Type header. Default is "UTF-8".
+	Charset string
+	// Disables the above charset append functionality. Default is false.
+	DisableCharset bool
 }
 
 // Renderer is a Middleware that maps a render.Render service into the Martini handler chain. An single variadic render.Options
@@ -115,6 +120,9 @@ func prepareOptions(options []Options) Options {
 	}
 	if len(opt.Extensions) == 0 {
 		opt.Extensions = []string{".tmpl"}
+	}
+	if len(opt.Charset) == 0 {
+		opt.Charset = DefaultCharset
 	}
 
 	return opt
@@ -168,6 +176,14 @@ type renderer struct {
 	opt Options
 }
 
+func (r *renderer) buildContentType(contentType string) string {
+	if r.opt.DisableCharset == true {
+		return contentType
+	}
+
+	return contentType + "; charset=" + r.opt.Charset
+}
+
 func (r *renderer) JSON(status int, v interface{}) {
 	result, err := json.Marshal(v)
 	if err != nil {
@@ -176,7 +192,7 @@ func (r *renderer) JSON(status int, v interface{}) {
 	}
 
 	// json rendered fine, write out the result
-	r.Header().Set(ContentType, ContentJSON)
+	r.Header().Set(ContentType, r.buildContentType(ContentJSON))
 	r.WriteHeader(status)
 	r.Write(result)
 }
@@ -194,7 +210,7 @@ func (r *renderer) HTML(status int, name string, binding interface{}) {
 	}
 
 	// template rendered fine, write out the result
-	r.Header().Set(ContentType, ContentHTML)
+	r.Header().Set(ContentType, r.buildContentType(ContentHTML))
 	r.Header().Set(ContentLength, strconv.Itoa(out.Len()))
 	r.WriteHeader(status)
 	io.Copy(r, out)

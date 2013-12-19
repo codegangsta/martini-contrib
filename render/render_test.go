@@ -17,7 +17,7 @@ type Greeting struct {
 func Test_Render_JSON(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
-	// nothing here to configure
+		DisableCharset: true,
 	}))
 
 	// routing
@@ -38,7 +38,8 @@ func Test_Render_JSON(t *testing.T) {
 func Test_Render_HTML(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
-		Directory: "fixtures/basic",
+		Directory:      "fixtures/basic",
+		DisableCharset: true,
 	}))
 
 	// routing
@@ -59,8 +60,9 @@ func Test_Render_HTML(t *testing.T) {
 func Test_Render_Extensions(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
-		Directory:  "fixtures/basic",
-		Extensions: []string{".tmpl", ".html"},
+		Directory:      "fixtures/basic",
+		DisableCharset: true,
+		Extensions:     []string{".tmpl", ".html"},
 	}))
 
 	// routing
@@ -82,7 +84,8 @@ func Test_Render_Funcs(t *testing.T) {
 
 	m := martini.Classic()
 	m.Use(Renderer(Options{
-		Directory: "fixtures/custom_funcs",
+		Directory:      "fixtures/custom_funcs",
+		DisableCharset: true,
 		Funcs: []template.FuncMap{
 			{
 				"myCustomFunc": func() string {
@@ -108,8 +111,9 @@ func Test_Render_Funcs(t *testing.T) {
 func Test_Render_Layout(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
-		Directory: "fixtures/basic",
-		Layout:    "layout",
+		Directory:      "fixtures/basic",
+		DisableCharset: true,
+		Layout:         "layout",
 	}))
 
 	// routing
@@ -128,7 +132,8 @@ func Test_Render_Layout(t *testing.T) {
 func Test_Render_Nested_HTML(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
-		Directory: "fixtures/basic",
+		Directory:      "fixtures/basic",
+		DisableCharset: true,
 	}))
 
 	// routing
@@ -149,8 +154,9 @@ func Test_Render_Nested_HTML(t *testing.T) {
 func Test_Render_Delimiters(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
-		Directory: "fixtures/basic",
-		Delims:    Delims{"{[{", "}]}"},
+		Delims:         Delims{"{[{", "}]}"},
+		Directory:      "fixtures/basic",
+		DisableCharset: true,
 	}))
 
 	// routing
@@ -170,16 +176,123 @@ func Test_Render_Delimiters(t *testing.T) {
 
 func Test_Render_Error404(t *testing.T) {
 	res := httptest.NewRecorder()
-	r := renderer{res, nil, Options{}}
+	r := renderer{res, nil, Options{DisableCharset: true}}
 	r.Error(404)
 	expect(t, res.Code, 404)
 }
 
 func Test_Render_Error500(t *testing.T) {
 	res := httptest.NewRecorder()
-	r := renderer{res, nil, Options{}}
+	r := renderer{res, nil, Options{DisableCharset: true}}
 	r.Error(500)
 	expect(t, res.Code, 500)
+}
+
+func Test_Render_Default_Charset_JSON(t *testing.T) {
+	m := martini.Classic()
+	m.Use(Renderer(Options{}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.JSON(300, Greeting{"hello", "world"})
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Code, 300)
+	expect(t, res.Header().Get(ContentType), ContentJSON+"; charset="+DefaultCharset)
+	expect(t, res.Body.String(), `{"one":"hello","two":"world"}`)
+}
+
+func Test_Render_Default_Charset_HTML(t *testing.T) {
+	m := martini.Classic()
+	m.Use(Renderer(Options{
+		Directory: "fixtures/basic",
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.HTML(200, "hello", "jeremy")
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Code, 200)
+	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset="+DefaultCharset)
+	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>\n")
+}
+
+func Test_Render_Blank_Charset(t *testing.T) {
+	m := martini.Classic()
+	m.Use(Renderer(Options{
+		Charset: "",
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.JSON(300, Greeting{"hello", "world"})
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Code, 300)
+	expect(t, res.Header().Get(ContentType), ContentJSON+"; charset="+DefaultCharset)
+	expect(t, res.Body.String(), `{"one":"hello","two":"world"}`)
+}
+
+func Test_Render_Custom_Charset(t *testing.T) {
+	m := martini.Classic()
+	customCharset := "ISO-8859-1"
+	m.Use(Renderer(Options{
+		Charset: customCharset,
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.JSON(300, Greeting{"hello", "world"})
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Code, 300)
+	expect(t, res.Header().Get(ContentType), ContentJSON+"; charset="+customCharset)
+	expect(t, res.Body.String(), `{"one":"hello","two":"world"}`)
+}
+
+func Test_Render_Custom_Charset_But_Disabled(t *testing.T) {
+	m := martini.Classic()
+	customCharset := "ISO-8859-1"
+	m.Use(Renderer(Options{
+		Directory:      "fixtures/basic",
+		Charset:        customCharset,
+		DisableCharset: true,
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.HTML(200, "hello", "jeremy")
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Code, 200)
+	expect(t, res.Header().Get(ContentType), ContentHTML)
+	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>\n")
 }
 
 /* Test Helpers */

@@ -40,11 +40,13 @@ func main() {
 ~~~ go
 // ...
 m.Use(render.Renderer(render.Options{
-  Directory: "templates", // specify what path to load the templates from
-  Layout: "layout", // specify a layout template. Layouts can call {{ yield }} to render the current template.
-  Extensions: []string{".tmpl", ".html"}, // Specify extensions to load for templates
+  Directory: "templates", // Specify what path to load the templates from.
+  Layout: "layout", // Specify a layout template. Layouts can call {{ yield }} to render the current template.
+  Extensions: []string{".tmpl", ".html"}, // Specify extensions to load for templates.
   Funcs: []template.FuncMap{AppHelpers}, // Specify helper function maps for templates to access.
-  Delims: render.Delims{"{[{", "}]}"}, // Sets delimiters to the specified strings
+  Delims: render.Delims{"{[{", "}]}"}, // Sets delimiters to the specified strings.
+  Charset: "ISO-8859-1", // Sets encoding for json and html content-types. Default is UTF-8.
+  DisableCharset: true, // Disables the charset encoding, just outputs the application/json or text/html.
 }))
 // ...
 ~~~
@@ -93,5 +95,76 @@ m.Use(render.Renderer(render.Options{
 </html>
 ~~~
 
+### Character Encodings
+The `render.Renderer` middleware will automatically set the proper Content-Type header based on which function you call. See below for an example of what the default settings would output:
+~~~ go
+// main.go
+package main
+
+import (
+  "github.com/codegangsta/martini"
+  "github.com/codegangsta/martini-contrib/render"
+)
+
+func main() {
+  m := martini.Classic()
+  m.Use(render.Renderer())
+
+  // This will set the Content-Type header to "text/html; charset=UTF-8"
+  m.Get("/", func(r render.Render) {
+    r.HTML(200, "hello", "world")
+  })
+
+  // This will set the Content-Type header to "application/json; charset=UTF-8"
+  m.Get("/api", func(r render.Render) {
+    r.JSON(200, map[string]interface{}{"hello": "world"})
+  })
+
+  m.Run()
+}
+
+~~~
+
+If you need to change the charset, you can set the `Charset` within the `render.Options` to a custom value:
+~~~ go
+// ...
+m.Use(render.Renderer(render.Options{
+  Charset: "ISO-8859-1",
+}))
+// ...
+~~~
+
+Or, if you want to disable the charset altogether you can set the `DisableCharset` value to true:
+~~~ go
+// main.go
+package main
+
+import (
+  "github.com/codegangsta/martini"
+  "github.com/codegangsta/martini-contrib/render"
+)
+
+func main() {
+  m := martini.Classic()
+  m.Use(render.Renderer(render.Options{
+    DisableCharset: true,
+  }))
+
+  // This is set the Content-Type to "text/html"
+  m.Get("/", func(r render.Render) {
+    r.HTML(200, "hello", "world")
+  })
+
+  // This is set the Content-Type to "application/json"
+  m.Get("/api", func(r render.Render) {
+    r.JSON(200, map[string]interface{}{"hello": "world"})
+  })
+
+  m.Run()
+}
+
+~~~
+
 ## Authors
 * [Jeremy Saenz](http://github.com/codegangsta)
+* [Cory Jacobsen](http://github.com/cojac)
