@@ -45,8 +45,7 @@ m.Use(render.Renderer(render.Options{
   Extensions: []string{".tmpl", ".html"}, // Specify extensions to load for templates.
   Funcs: []template.FuncMap{AppHelpers}, // Specify helper function maps for templates to access.
   Delims: render.Delims{"{[{", "}]}"}, // Sets delimiters to the specified strings.
-  Charset: "ISO-8859-1", // Sets encoding for json and html content-types. Default is UTF-8.
-  DisableCharset: true, // Disables the charset encoding, just outputs the application/json or text/html.
+  Charset: "UTF-8", // Sets encoding for json and html content-types.
 }))
 // ...
 ~~~
@@ -96,7 +95,7 @@ m.Use(render.Renderer(render.Options{
 ~~~
 
 ### Character Encodings
-The `render.Renderer` middleware will automatically set the proper Content-Type header based on which function you call. See below for an example of what the default settings would output:
+The `render.Renderer` middleware will automatically set the proper Content-Type header based on which function you call. See below for an example of what the default settings would output (note that there is no charset):
 ~~~ go
 // main.go
 package main
@@ -110,12 +109,12 @@ func main() {
   m := martini.Classic()
   m.Use(render.Renderer())
 
-  // This will set the Content-Type header to "text/html; charset=UTF-8"
+  // This will set the Content-Type header to "text/html"
   m.Get("/", func(r render.Render) {
     r.HTML(200, "hello", "world")
   })
 
-  // This will set the Content-Type header to "application/json; charset=UTF-8"
+  // This will set the Content-Type header to "application/json"
   m.Get("/api", func(r render.Render) {
     r.JSON(200, map[string]interface{}{"hello": "world"})
   })
@@ -125,16 +124,7 @@ func main() {
 
 ~~~
 
-If you need to change the charset, you can set the `Charset` within the `render.Options` to a custom value:
-~~~ go
-// ...
-m.Use(render.Renderer(render.Options{
-  Charset: "ISO-8859-1",
-}))
-// ...
-~~~
-
-Or, if you want to disable the charset altogether you can set the `DisableCharset` value to true:
+In order to add a charset, you can set the `Charset` within the `render.Options` to your encoding value:
 ~~~ go
 // main.go
 package main
@@ -147,15 +137,15 @@ import (
 func main() {
   m := martini.Classic()
   m.Use(render.Renderer(render.Options{
-    DisableCharset: true,
+    Charset: "UTF-8",
   }))
 
-  // This is set the Content-Type to "text/html"
+  // This is set the Content-Type to "text/html; charset=UTF-8"
   m.Get("/", func(r render.Render) {
     r.HTML(200, "hello", "world")
   })
 
-  // This is set the Content-Type to "application/json"
+  // This is set the Content-Type to "application/json; charset=UTF-8"
   m.Get("/api", func(r render.Render) {
     r.JSON(200, map[string]interface{}{"hello": "world"})
   })
