@@ -149,8 +149,8 @@ func Test_Render_Nested_HTML(t *testing.T) {
 func Test_Render_Delimiters(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
-		Directory: "fixtures/basic",
 		Delims:    Delims{"{[{", "}]}"},
+		Directory: "fixtures/basic",
 	}))
 
 	// routing
@@ -170,16 +170,82 @@ func Test_Render_Delimiters(t *testing.T) {
 
 func Test_Render_Error404(t *testing.T) {
 	res := httptest.NewRecorder()
-	r := renderer{res, nil, Options{}}
+	r := renderer{res, nil, Options{}, ""}
 	r.Error(404)
 	expect(t, res.Code, 404)
 }
 
 func Test_Render_Error500(t *testing.T) {
 	res := httptest.NewRecorder()
-	r := renderer{res, nil, Options{}}
+	r := renderer{res, nil, Options{}, ""}
 	r.Error(500)
 	expect(t, res.Code, 500)
+}
+
+func Test_Render_Default_Charset_JSON(t *testing.T) {
+	m := martini.Classic()
+	charset := "UTF-8"
+	m.Use(Renderer(Options{
+		Charset: charset,
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.JSON(300, Greeting{"hello", "world"})
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Code, 300)
+	expect(t, res.Header().Get(ContentType), ContentJSON+"; charset="+charset)
+	expect(t, res.Body.String(), `{"one":"hello","two":"world"}`)
+}
+
+func Test_Render_Default_Charset_HTML(t *testing.T) {
+	m := martini.Classic()
+	charset := "ISO-8859-1"
+	m.Use(Renderer(Options{
+		Directory: "fixtures/basic",
+		Charset:   charset,
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.HTML(200, "hello", "jeremy")
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Code, 200)
+	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset="+charset)
+	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>\n")
+}
+
+func Test_Render_Blank_Charset(t *testing.T) {
+	m := martini.Classic()
+	m.Use(Renderer(Options{
+		Charset: "",
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.JSON(300, Greeting{"hello", "world"})
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Code, 300)
+	expect(t, res.Header().Get(ContentType), ContentJSON)
+	expect(t, res.Body.String(), `{"one":"hello","two":"world"}`)
 }
 
 /* Test Helpers */
