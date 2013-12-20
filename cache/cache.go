@@ -11,7 +11,7 @@ const (
 )
 
 type Cache interface {
-	Get(key string) []byte
+	Get(key string) (*Item, error)
 	Set(key string, value []byte) error
 }
 
@@ -25,10 +25,8 @@ type cache struct {
 	engine Engine
 }
 
-func (c *cache) Get(key string) (value []byte) {
-	cache_item, err := c.engine.Get(key)
-	check(err)
-	return cache_item.Value
+func (c *cache) Get(key string) (*Item, error) {
+	return c.engine.Get(key)
 }
 
 func (c *cache) Set(key string, value []byte) (err error) {

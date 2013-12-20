@@ -8,8 +8,6 @@ import (
 )
 
 func Test_MemCache(t *testing.T) {
-	println()
-	println("==== Memcache Test ====")
 	m := martini.Classic()
 
 	engine := NewMemcacheEngine(Servers{
@@ -24,7 +22,8 @@ func Test_MemCache(t *testing.T) {
 	})
 
 	m.Get("/getmemcache", func(cache Cache) string {
-		if string(cache.Get("hello")) != "world" {
+		item, _ := cache.Get("hello")
+		if string(item.Value) != "world" {
 			t.Error("Cache writing failed")
 		}
 		return "OK"
@@ -40,8 +39,6 @@ func Test_MemCache(t *testing.T) {
 }
 
 func Test_FileCache(t *testing.T) {
-	println()
-	println("==== FileCache Test ====")
 
 	m := martini.Classic()
 
@@ -55,7 +52,8 @@ func Test_FileCache(t *testing.T) {
 	})
 
 	m.Get("/getfilecache", func(cache Cache) string {
-		if string(cache.Get("hello")) != "world" {
+		item, _ := cache.Get("hello")
+		if string(item.Value) != "world" {
 			t.Error("Cache writing failed")
 		}
 		return "OK"
