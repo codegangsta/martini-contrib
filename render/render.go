@@ -203,6 +203,7 @@ func (r *renderer) HTML(status int, name string, binding interface{}) {
 	out, err := r.execute(name, binding)
 	if err != nil {
 		http.Error(r, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	// template rendered fine, write out the result

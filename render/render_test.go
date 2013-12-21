@@ -35,6 +35,26 @@ func Test_Render_JSON(t *testing.T) {
 	expect(t, res.Body.String(), `{"one":"hello","two":"world"}`)
 }
 
+func Test_Render_Bad_HTML(t *testing.T) {
+	m := martini.Classic()
+	m.Use(Renderer(Options{
+		Directory: "fixtures/basic",
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.HTML(200, "nope", nil)
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Code, 500)
+	expect(t, res.Body.String(), "html/template: \"nope\" is undefined\n")
+}
+
 func Test_Render_HTML(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
