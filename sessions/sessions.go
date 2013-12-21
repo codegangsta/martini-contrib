@@ -77,7 +77,8 @@ func Sessions(name string, store Store) martini.Handler {
 		// Map to the Session interface
 		s := &session{name, r, l, store, nil, false}
 		c.MapTo(s, (*Session)(nil))
-
+	
+		
 		// Use before hook to save out the session
 		rw := res.(martini.ResponseWriter)
 		rw.Before(func(martini.ResponseWriter) {
@@ -86,11 +87,11 @@ func Sessions(name string, store Store) martini.Handler {
 			}
 		})
 		
-		c.Next()
-		
 		// clear the context, we don't need to use
 		// gorilla context and we don't want memory leaks
-		context.Clear(r)
+		defer context.Clear(r)
+		
+		c.Next()
 	}
 }
 
