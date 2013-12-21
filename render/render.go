@@ -38,10 +38,11 @@ import (
 )
 
 const (
-	ContentType   = "Content-Type"
-	ContentLength = "Content-Length"
-	ContentJSON   = "application/json"
-	ContentHTML   = "text/html"
+	ContentType    = "Content-Type"
+	ContentLength  = "Content-Length"
+	ContentJSON    = "application/json"
+	ContentHTML    = "text/html"
+	defaultCharset = "utf-8"
 )
 
 // Included helper functions for use when rendering html
@@ -111,7 +112,7 @@ func prepareCharset(charset string) string {
 		return "; charset=" + charset
 	}
 
-	return ""
+	return "; charset=" + defaultCharset
 }
 
 func prepareOptions(options []Options) Options {

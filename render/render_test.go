@@ -31,7 +31,7 @@ func Test_Render_JSON(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 300)
-	expect(t, res.Header().Get(ContentType), ContentJSON)
+	expect(t, res.Header().Get(ContentType), ContentJSON+"; charset=utf-8")
 	expect(t, res.Body.String(), `{"one":"hello","two":"world"}`)
 }
 
@@ -72,7 +72,7 @@ func Test_Render_HTML(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 200)
-	expect(t, res.Header().Get(ContentType), ContentHTML)
+	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=utf-8")
 	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>\n")
 }
 
@@ -94,7 +94,7 @@ func Test_Render_Extensions(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 200)
-	expect(t, res.Header().Get(ContentType), ContentHTML)
+	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=utf-8")
 	expect(t, res.Body.String(), "Hypertext!\n")
 }
 
@@ -162,7 +162,7 @@ func Test_Render_Nested_HTML(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 200)
-	expect(t, res.Header().Get(ContentType), ContentHTML)
+	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=utf-8")
 	expect(t, res.Body.String(), "<h1>Admin jeremy</h1>\n")
 }
 
@@ -184,7 +184,7 @@ func Test_Render_Delimiters(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 200)
-	expect(t, res.Header().Get(ContentType), ContentHTML)
+	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=utf-8")
 	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>")
 }
 
@@ -202,11 +202,10 @@ func Test_Render_Error500(t *testing.T) {
 	expect(t, res.Code, 500)
 }
 
-func Test_Render_Default_Charset_JSON(t *testing.T) {
+func Test_Render_Charset_JSON(t *testing.T) {
 	m := martini.Classic()
-	charset := "UTF-8"
 	m.Use(Renderer(Options{
-		Charset: charset,
+		Charset: "foobar",
 	}))
 
 	// routing
@@ -220,16 +219,14 @@ func Test_Render_Default_Charset_JSON(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 300)
-	expect(t, res.Header().Get(ContentType), ContentJSON+"; charset="+charset)
+	expect(t, res.Header().Get(ContentType), ContentJSON+"; charset=foobar")
 	expect(t, res.Body.String(), `{"one":"hello","two":"world"}`)
 }
 
 func Test_Render_Default_Charset_HTML(t *testing.T) {
 	m := martini.Classic()
-	charset := "ISO-8859-1"
 	m.Use(Renderer(Options{
 		Directory: "fixtures/basic",
-		Charset:   charset,
 	}))
 
 	// routing
@@ -243,29 +240,8 @@ func Test_Render_Default_Charset_HTML(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 200)
-	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset="+charset)
+	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=utf-8")
 	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>\n")
-}
-
-func Test_Render_Blank_Charset(t *testing.T) {
-	m := martini.Classic()
-	m.Use(Renderer(Options{
-		Charset: "",
-	}))
-
-	// routing
-	m.Get("/foobar", func(r Render) {
-		r.JSON(300, Greeting{"hello", "world"})
-	})
-
-	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/foobar", nil)
-
-	m.ServeHTTP(res, req)
-
-	expect(t, res.Code, 300)
-	expect(t, res.Header().Get(ContentType), ContentJSON)
-	expect(t, res.Body.String(), `{"one":"hello","two":"world"}`)
 }
 
 /* Test Helpers */
