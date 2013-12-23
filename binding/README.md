@@ -53,6 +53,8 @@ This is a contrived example to show a few different ways to use the `binding` pa
 package main
 
 import (
+   "net/http"
+   
    "github.com/codegangsta/martini"
    "github.com/codegangsta/martini-contrib/binding"
  )
@@ -66,13 +68,12 @@ type BlogPost struct {
 
 // This method implements binding.Validator and is executed by the binding.Validate middleware
 func (bp BlogPost) Validate(errors *binding.Errors, req *http.Request) {
-	if req.Header().Get("X-Custom-Thing") == "" {
+	if req.Header.Get("X-Custom-Thing") == "" {
 		errors.Overall["x-custom-thing"] = "The X-Custom-Thing header is required"
 	}
 	if len(bp.Title) < 4 {
 		errors.Fields["title"] = "Too short; minimum 4 characters"
-	}
-	else if len(bp.Title) > 120 {
+	} else if len(bp.Title) > 120 {
 		errors.Fields["title"] = "Too long; maximum 120 characters"
 	}
 	if bp.Views < 0 {
