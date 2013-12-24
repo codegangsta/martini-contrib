@@ -31,7 +31,7 @@ func Test_Render_JSON(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 300)
-	expect(t, res.Header().Get(ContentType), ContentJSON+"; charset=utf-8")
+	expect(t, res.Header().Get(ContentType), ContentJSON+"; charset=UTF-8")
 	expect(t, res.Body.String(), `{"one":"hello","two":"world"}`)
 }
 
@@ -72,7 +72,7 @@ func Test_Render_HTML(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 200)
-	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=utf-8")
+	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=UTF-8")
 	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>\n")
 }
 
@@ -94,7 +94,7 @@ func Test_Render_Extensions(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 200)
-	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=utf-8")
+	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=UTF-8")
 	expect(t, res.Body.String(), "Hypertext!\n")
 }
 
@@ -162,7 +162,7 @@ func Test_Render_Nested_HTML(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 200)
-	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=utf-8")
+	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=UTF-8")
 	expect(t, res.Body.String(), "<h1>Admin jeremy</h1>\n")
 }
 
@@ -184,7 +184,7 @@ func Test_Render_Delimiters(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 200)
-	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=utf-8")
+	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=UTF-8")
 	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>")
 }
 
@@ -240,7 +240,7 @@ func Test_Render_Default_Charset_HTML(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 200)
-	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=utf-8")
+	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=UTF-8")
 	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>\n")
 }
 

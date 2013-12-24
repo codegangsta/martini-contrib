@@ -42,7 +42,7 @@ const (
 	ContentLength  = "Content-Length"
 	ContentJSON    = "application/json"
 	ContentHTML    = "text/html"
-	defaultCharset = "utf-8"
+	defaultCharset = "UTF-8"
 )
 
 // Included helper functions for use when rendering html
