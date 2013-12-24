@@ -45,7 +45,7 @@ m.Use(render.Renderer(render.Options{
   Extensions: []string{".tmpl", ".html"}, // Specify extensions to load for templates.
   Funcs: []template.FuncMap{AppHelpers}, // Specify helper function maps for templates to access.
   Delims: render.Delims{"{[{", "}]}"}, // Sets delimiters to the specified strings.
-  Charset: "UTF-8", // Sets encoding for json and html content-types.
+  Charset: "UTF-8", // Sets encoding for json and html content-types. Default is "UTF-8".
 }))
 // ...
 ~~~
@@ -95,7 +95,7 @@ m.Use(render.Renderer(render.Options{
 ~~~
 
 ### Character Encodings
-The `render.Renderer` middleware will automatically set the proper Content-Type header based on which function you call. See below for an example of what the default settings would output (note that there is no charset):
+The `render.Renderer` middleware will automatically set the proper Content-Type header based on which function you call. See below for an example of what the default settings would output (note that UTF-8 is the default):
 ~~~ go
 // main.go
 package main
@@ -109,12 +109,12 @@ func main() {
   m := martini.Classic()
   m.Use(render.Renderer())
 
-  // This will set the Content-Type header to "text/html"
+  // This will set the Content-Type header to "text/html; charset=UTF-8"
   m.Get("/", func(r render.Render) {
     r.HTML(200, "hello", "world")
   })
 
-  // This will set the Content-Type header to "application/json"
+  // This will set the Content-Type header to "application/json; charset=UTF-8"
   m.Get("/api", func(r render.Render) {
     r.JSON(200, map[string]interface{}{"hello": "world"})
   })
@@ -124,7 +124,7 @@ func main() {
 
 ~~~
 
-In order to add a charset, you can set the `Charset` within the `render.Options` to your encoding value:
+In order to change the charset, you can set the `Charset` within the `render.Options` to your encoding value:
 ~~~ go
 // main.go
 package main
@@ -137,15 +137,15 @@ import (
 func main() {
   m := martini.Classic()
   m.Use(render.Renderer(render.Options{
-    Charset: "UTF-8",
+    Charset: "ISO-8859-1",
   }))
 
-  // This is set the Content-Type to "text/html; charset=UTF-8"
+  // This is set the Content-Type to "text/html; charset=ISO-8859-1"
   m.Get("/", func(r render.Render) {
     r.HTML(200, "hello", "world")
   })
 
-  // This is set the Content-Type to "application/json; charset=UTF-8"
+  // This is set the Content-Type to "application/json; charset=ISO-8859-1"
   m.Get("/api", func(r render.Render) {
     r.JSON(200, map[string]interface{}{"hello": "world"})
   })
