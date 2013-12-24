@@ -4,12 +4,13 @@ package binding
 
 import (
 	"encoding/json"
-	"github.com/codegangsta/martini"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/codegangsta/martini"
 )
 
 /*

@@ -1,18 +1,19 @@
 package binding
 
 import (
-	"github.com/codegangsta/martini"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/codegangsta/martini"
 )
 
 func TestBind(t *testing.T) {
 	index := 0
 	for test, expectStatus := range bindTests {
 		recorder := httptest.NewRecorder()
-		handler := func(post BlogPost, errors Errors) { handle(test, t, index, post) }
+		handler := func(post BlogPost, errors Errors) { handle(test, t, index, post, errors) }
 
 		m := martini.Classic()
 		switch test.method {
@@ -42,7 +43,7 @@ func TestForm(t *testing.T) {
 	for index, test := range formTests {
 		recorder := httptest.NewRecorder()
 		handler := func(post BlogPost, errors Errors) {
-			handle(test, t, index, post)
+			handle(test, t, index, post, errors)
 		}
 
 		m := martini.Classic()
@@ -64,7 +65,7 @@ func TestForm(t *testing.T) {
 func TestJson(t *testing.T) {
 	for index, test := range jsonTests {
 		recorder := httptest.NewRecorder()
-		handler := func(post BlogPost, errors Errors) { handle(test, t, index, post) }
+		handler := func(post BlogPost, errors Errors) { handle(test, t, index, post, errors) }
 
 		m := martini.Classic()
 		switch test.method {
@@ -86,10 +87,16 @@ func TestJson(t *testing.T) {
 	}
 }
 
-func handle(test testCase, t *testing.T, index int, post BlogPost) {
+func handle(test testCase, t *testing.T, index int, post BlogPost, errors Errors) {
 	assertEqualField(t, "Title", index, test.ref.Title, post.Title)
 	assertEqualField(t, "Content", index, test.ref.Content, post.Content)
 	assertEqualField(t, "Views", index, test.ref.Views, post.Views)
+
+	if test.ok && errors.Count() > 0 {
+		t.Errorf("%v should be OK (0 errors), but had errors: %v", test, errors)
+	} else if !test.ok && errors.Count() == 0 {
+		t.Errorf("%v should have errors, but was OK (0 errors): %v", test)
+	}
 }
 
 func assertEqualField(t *testing.T, fieldname string, testcasenumber int, expected interface{}, got interface{}) {
@@ -153,10 +160,10 @@ type (
 	}
 
 	BlogPost struct {
-		Title   string `form:"title" json:"title" binding:"required"`
-		Content string `form:"content" json:"content"`
-		Views   int    `form:"views" json:"views"`
-		internal int   `form:"-"`
+		Title    string `form:"title" json:"title" binding:"required"`
+		Content  string `form:"content" json:"content"`
+		Views    int    `form:"views" json:"views"`
+		internal int    `form:"-"`
 	}
 
 	User struct {
@@ -257,7 +264,7 @@ var (
 			path + "?content=This is the content",
 			"",
 			"",
-			true,
+			false,
 			&BlogPost{Title: "", Content: "This is the content"},
 		},
 		{
@@ -265,7 +272,7 @@ var (
 			path + "?content=This is the content&title=Blog+Post+Title&views=3",
 			"",
 			"",
-			true,
+			false, // false because POST requests should have a body, not just a query string
 			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Views: 3},
 		},
 	}
@@ -283,7 +290,7 @@ var (
 		{
 			"POST",
 			"",
-			`{blah blah blah}`,
+			`{asdf}`,
 			"",
 			false,
 			&BlogPost{},
@@ -299,20 +306,28 @@ var (
 		{
 			"DELETE",
 			"",
-			`{blah blah blah}`,
+			`{;sdf _SDf- }`,
 			"",
 			false,
 			&BlogPost{},
 		},
 
-		// Valid requests
+		// Valid-JSON requests
 		{
 			"GET",
 			"",
 			`{"content":"This is the content"}`,
 			"",
-			true,
+			false,
 			&BlogPost{Title: "", Content: "This is the content"},
+		},
+		{
+			"POST",
+			"",
+			`{}`,
+			"application/json",
+			false,
+			&BlogPost{Title: "", Content: ""},
 		},
 		{
 			"POST",
