@@ -82,7 +82,7 @@ m.Use(render.Renderer(render.Options{
 ~~~
 
 ~~~ html
-<!-- layout.tmpl -->
+<!-- templates/layout.tmpl -->
 <html>
   <head>
     <title>Martini Plz</title>
