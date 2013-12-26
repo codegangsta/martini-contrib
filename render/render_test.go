@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"testing"
 )
@@ -190,16 +191,46 @@ func Test_Render_Delimiters(t *testing.T) {
 
 func Test_Render_Error404(t *testing.T) {
 	res := httptest.NewRecorder()
-	r := renderer{res, nil, Options{}, ""}
+	r := renderer{res, nil, nil, Options{}, ""}
 	r.Error(404)
 	expect(t, res.Code, 404)
 }
 
 func Test_Render_Error500(t *testing.T) {
 	res := httptest.NewRecorder()
-	r := renderer{res, nil, Options{}, ""}
+	r := renderer{res, nil, nil, Options{}, ""}
 	r.Error(500)
 	expect(t, res.Code, 500)
+}
+
+func Test_Render_Redirect_Default(t *testing.T) {
+	url, _ := url.Parse("http://localhost/path/one")
+	req := http.Request{
+		Method: "GET",
+		URL:    url,
+	}
+	res := httptest.NewRecorder()
+
+	r := renderer{res, &req, nil, Options{}, ""}
+	r.Redirect("two")
+
+	expect(t, res.Code, 302)
+	expect(t, res.HeaderMap["Location"][0], "/path/two")
+}
+
+func Test_Render_Redirect_Code(t *testing.T) {
+	url, _ := url.Parse("http://localhost/path/one")
+	req := http.Request{
+		Method: "GET",
+		URL:    url,
+	}
+	res := httptest.NewRecorder()
+
+	r := renderer{res, &req, nil, Options{}, ""}
+	r.Redirect("two", 307)
+
+	expect(t, res.Code, 307)
+	expect(t, res.HeaderMap["Location"][0], "/path/two")
 }
 
 func Test_Render_Charset_JSON(t *testing.T) {
