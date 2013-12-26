@@ -295,7 +295,7 @@ func Test_Render_Override_Layout(t *testing.T) {
 	m.ServeHTTP(res, req)
 
 	expect(t, res.Code, 200)
-	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=utf-8")
+	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=UTF-8")
 	expect(t, res.Body.String(), "another head\n<h1>jeremy</h1>\n\nanother foot\n")
 }
 
