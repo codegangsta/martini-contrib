@@ -58,7 +58,7 @@ type Render interface {
 	// JSON writes the given status and JSON serialized version of the given value to the http.ResponseWriter.
 	JSON(status int, v interface{})
 	// HTML renders a html template specified by the name and writes the result and given status to the http.ResponseWriter.
-	HTML(status int, name string, v interface{})
+	HTML(status int, name string, v interface{}, htmlOpt ...HTMLOptions)
 	// Error is a convenience function that writes an http status to the http.ResponseWriter.
 	Error(status int)
 }
@@ -85,6 +85,12 @@ type Options struct {
 	Delims Delims
 	// Appends the given charset to the Content-Type header. Default is "UTF-8".
 	Charset string
+}
+
+// HTMLOptions is a struct for overriding some rendering Options for specific HTML call
+type HTMLOptions struct {
+	// Layout template name. Overrides Options.Layout.
+	Layout string
 }
 
 // Renderer is a Middleware that maps a render.Render service into the Martini handler chain. An single variadic render.Options
@@ -194,11 +200,12 @@ func (r *renderer) JSON(status int, v interface{}) {
 	r.Write(result)
 }
 
-func (r *renderer) HTML(status int, name string, binding interface{}) {
+func (r *renderer) HTML(status int, name string, binding interface{}, htmlOpt ...HTMLOptions) {
+	opt := r.prepareHTMLOptions(htmlOpt)
 	// assign a layout if there is one
-	if len(r.opt.Layout) > 0 {
+	if len(opt.Layout) > 0 {
 		r.addYield(name, binding)
-		name = r.opt.Layout
+		name = opt.Layout
 	}
 
 	out, err := r.execute(name, binding)
@@ -212,6 +219,16 @@ func (r *renderer) HTML(status int, name string, binding interface{}) {
 	r.Header().Set(ContentLength, strconv.Itoa(out.Len()))
 	r.WriteHeader(status)
 	io.Copy(r, out)
+}
+
+func (r *renderer) prepareHTMLOptions(htmlOpt []HTMLOptions) HTMLOptions {
+	if len(htmlOpt) > 0 {
+		return htmlOpt[0]
+	}
+
+	return HTMLOptions{
+		Layout: r.opt.Layout,
+	}
 }
 
 // Error writes the given HTTP status to the current ResponseWriter
