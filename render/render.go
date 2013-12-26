@@ -61,6 +61,8 @@ type Render interface {
 	HTML(status int, name string, v interface{}, htmlOpt ...HTMLOptions)
 	// Error is a convenience function that writes an http status to the http.ResponseWriter.
 	Error(status int)
+	// A convienience function that sends an HTTP redirect. If status is omitted, uses 302 (Found)
+	Redirect(location string, status ...int)
 }
 
 // Delims represents a set of Left and Right delimiters for HTML template rendering
@@ -103,13 +105,13 @@ func Renderer(options ...Options) martini.Handler {
 	opt := prepareOptions(options)
 	cs := prepareCharset(opt.Charset)
 	t := compile(opt)
-	return func(res http.ResponseWriter, c martini.Context) {
+	return func(res http.ResponseWriter, req *http.Request, c martini.Context) {
 		// recompile for easy development
 		if martini.Env == martini.Dev {
 			t = compile(opt)
 		}
 		tc, _ := t.Clone()
-		c.MapTo(&renderer{res, tc, opt, cs}, (*Render)(nil))
+		c.MapTo(&renderer{res, req, tc, opt, cs}, (*Render)(nil))
 	}
 }
 
@@ -182,6 +184,7 @@ func compile(options Options) *template.Template {
 
 type renderer struct {
 	http.ResponseWriter
+	req             *http.Request
 	t               *template.Template
 	opt             Options
 	compiledCharset string
@@ -234,6 +237,15 @@ func (r *renderer) prepareHTMLOptions(htmlOpt []HTMLOptions) HTMLOptions {
 // Error writes the given HTTP status to the current ResponseWriter
 func (r *renderer) Error(status int) {
 	r.WriteHeader(status)
+}
+
+func (r *renderer) Redirect(location string, status ...int) {
+	code := http.StatusFound
+	if len(status) == 1 {
+		code = status[0]
+	}
+
+	http.Redirect(r, r.req, location, code)
 }
 
 func (r *renderer) execute(name string, binding interface{}) (*bytes.Buffer, error) {
