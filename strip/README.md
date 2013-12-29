@@ -54,4 +54,4 @@ to a certain URL pattern.
 ## Authors
 * [Jeremy Saenz](http://github.com/codegangsta)
 * [Archs Sun](http://github.com/Archs)
-* [hoisie][]
+* [hoisie](http://github.com/hoisie)
