@@ -7,12 +7,14 @@ import (
 	"net/http"
 )
 
-// Commonly used Http header used to override the method
+// HeaderHTTPMethodOverride is a commonly used
+// Http header to override the method.
 const HeaderHTTPMethodOverride = "X-HTTP-Method-Override"
 
 var httpMethods = []string{"PUT", "PATCH", "DELETE"}
 
-// An invalid http method was given to OverrideRequestMethod()
+// ErrInvalidOverrideMethod is returned when
+// an invalid http method was given to OverrideRequestMethod.
 var ErrInvalidOverrideMethod = errors.New("invalid override method")
 
 func isValidOverrideMethod(method string) bool {
@@ -42,7 +44,8 @@ func Override() http.Handler {
 	})
 }
 
-// Overrides the http request's method with the specified method
+// OverrideRequestMethod overrides the http
+// request's method with the specified method.
 func OverrideRequestMethod(r *http.Request, method string) error {
 	if !isValidOverrideMethod(method) {
 		return ErrInvalidOverrideMethod
