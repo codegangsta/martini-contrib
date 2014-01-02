@@ -19,6 +19,7 @@ Join the [Mailing list](https://groups.google.com/forum/#!forum/martini-go)
 * [web](https://github.com/codegangsta/martini-contrib/tree/master/web) - web.go Context compatibility.
 * [strip](https://github.com/codegangsta/martini-contrib/tree/master/strip) - URL Prefix stripping.
 * [method](https://github.com/codegangsta/martini-contrib/tree/master/method) - HTTP method overriding via Header or form fields.
+* [secure](https://github.com/codegangsta/martini-contrib/tree/master/secure) - Implements a few quick security wins.
 
 ## Contributing
 Feel free to submit patches or file issues via GitHub. If you have an idea for a handler put up a Pull Request and we will find where it fits best!
