@@ -15,11 +15,11 @@ import (
 
 /*
 	To the land of Middle-ware Earth:
+
 		One func to rule them all,
 		One func to find them,
 		One func to bring them all,
 		And in this package BIND them.
-			- Sincerely, Sauron
 */
 
 // Bind accepts a copy of an empty struct and populates it with
