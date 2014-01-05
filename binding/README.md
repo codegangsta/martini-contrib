@@ -22,6 +22,8 @@ Your application (the final handler) will not even see the request if there are 
 
 It reads the Content-Type of the request to know how to deserialize it, or if the Content-Type is not specified, it tries different deserializers until one returns without errors.
 
+**Important safety tip:** Don't attempt to bind a pointer to a struct. This will cause a panic [to prevent a race condition](https://github.com/codegangsta/martini-contrib/pull/34#issuecomment-29683659) where every request would be pointing to the same struct.
+
 #### Form
 
 `binding.Form` deserializes form data from the request, whether in the query string or as a form-urlencoded payload, and puts the data into a struct you pass in. It then invokes the `binding.Validate` middleware to perform validation. No error handling is performed, but you can get the errors in your handler by receiving a `binding.Errors` type.
