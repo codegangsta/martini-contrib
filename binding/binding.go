@@ -4,7 +4,6 @@ package binding
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -97,10 +96,7 @@ func Json(jsonStruct interface{}) martini.Handler {
 			defer req.Body.Close()
 		}
 
-		content, err := ioutil.ReadAll(req.Body)
-		if err != nil {
-			errors.Overall[ReaderError] = err.Error()
-		} else if err = json.Unmarshal(content, jsonStruct.Interface()); err != nil {
+		if err := json.NewDecoder(req.Body).Decode(jsonStruct.Interface()); err != nil {
 			errors.Overall[DeserializationError] = err.Error()
 		}
 
@@ -290,7 +286,6 @@ type (
 const (
 	RequireError         string = "Required"
 	DeserializationError string = "DeserializationError"
-	ReaderError          string = "ReaderError"
 	IntegerTypeError     string = "IntegerTypeError"
 	BooleanTypeError     string = "BooleanTypeError"
 	FloatTypeError       string = "FloatTypeError"
