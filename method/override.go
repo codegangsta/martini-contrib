@@ -10,6 +10,9 @@ import (
 // HeaderHTTPMethodOverride is a commonly used
 // Http header to override the method.
 const HeaderHTTPMethodOverride = "X-HTTP-Method-Override"
+
+// ParamHTTPMethodOverride is a commonly used
+// HTML form parameter to override the method.
 const ParamHTTPMethodOverride = "_method"
 
 var httpMethods = []string{"PUT", "PATCH", "DELETE"}
@@ -28,6 +31,7 @@ func isValidOverrideMethod(method string) bool {
 }
 
 // Override checks for the X-HTTP-Method-Override header
+// or the HTML for parameter, `_method`
 // and uses (if valid) the http method instead of
 // Request.Method.
 // This is especially useful for http clients
@@ -38,7 +42,7 @@ func Override() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			m := r.FormValue(ParamHTTPMethodOverride)
-			if m != "" {
+			if isValidOverrideMethod(m) {
 				OverrideRequestMethod(r, m)
 			}
 			m = r.Header.Get(HeaderHTTPMethodOverride)

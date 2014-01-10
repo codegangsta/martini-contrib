@@ -107,3 +107,25 @@ func TestInMartini(t *testing.T) {
 	}
 
 }
+
+func TestParamenterOverrideInMartini(t *testing.T) {
+	for _, test := range tests {
+		w := httptest.NewRecorder()
+		m := martini.New()
+		m.Use(Override())
+		m.Use(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != test.ExpectedMethod {
+				t.Errorf("Expected %s, got %s", test.ExpectedMethod, r.Method)
+			}
+		})
+
+		query := "_method=" + test.OverrideMethod
+		r, err := http.NewRequest(test.Method, "/?"+query, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		m.ServeHTTP(w, r)
+	}
+
+}
