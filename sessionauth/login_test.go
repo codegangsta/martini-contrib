@@ -1,4 +1,4 @@
-package login
+package sessionauth
 
 import (
 	"github.com/codegangsta/martini"

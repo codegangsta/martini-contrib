@@ -1,6 +1,6 @@
 // Package login is a middleware for Martini that provides a simple way to track user sessions
 // in on a website. Please see the README for a more detailed description of the package.
-package login
+package sessionauth
 
 import (
 	"encoding/json"

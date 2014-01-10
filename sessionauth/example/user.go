@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/rday/martini-login"
+	"../../sessionauth"
 )
 
 // MyUserModel can be any struct that represents a user in my system
@@ -13,7 +13,7 @@ type MyUserModel struct {
 
 // GetAnonymousUser should generate an anonymous user model
 // for all sessions. This should be an unauthenticated 0 value struct.
-func GenerateAnonymousUser() login.User {
+func GenerateAnonymousUser() sessionauth.User {
 	return &MyUserModel{}
 }
 
