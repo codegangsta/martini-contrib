@@ -5,7 +5,7 @@ import (
 	"github.com/codegangsta/martini-contrib/binding"
 	"github.com/codegangsta/martini-contrib/render"
 	"github.com/codegangsta/martini-contrib/sessions"
-	"../../sessionauth"
+	"github.com/rday/martini-login/sessionauth"
 	"net/http"
 )
 
