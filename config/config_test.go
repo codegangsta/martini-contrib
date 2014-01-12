@@ -22,7 +22,7 @@ var confgBodyTests = []confgBodyTest{
 	{"/empty", "test_examples/empty.json", make(Body)},
 
 	// Test a file with values
-	{"/correct", "test_examples/correct.json", make(Body)},
+	{"/correct", "test_examples/correct.json", Body{"Name": "Platypus", "Order": "Monotremata"}},
 }
 
 func TestConfigBodyTests(t *testing.T) {
@@ -73,11 +73,10 @@ func newBenchmarkMartini(config_file string) *martini.ClassicMartini {
 	m := &martini.ClassicMartini{base, router}
 	if config_file != "" {
 		m.Use(File(config_file))
+		m.Get("/benchmark", func(conf Body) {})
+	} else {
+		m.Get("/benchmark", func() {})
 	}
-
-	m.Get("/benchmark", func(conf Body) {
-		//b.Logf("Greeting: %s", conf["greeting"])
-	})
 
 	return m
 }
