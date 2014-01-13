@@ -31,15 +31,15 @@ import (
 )
 
 const (
-	STSHeader           = "Strict-Transport-Security"
-	STSSubdomainString  = "; includeSubdomains"
-	FrameOptionsHeader  = "X-Frame-Options"
-	FrameOptionsValue   = "DENY"
-	ContentTypeHeader   = "X-Content-Type-Options"
-	ContentTypeValue    = "nosniff"
-	XSSProtectionHeader = "X-XSS-Protection"
-	XSSProtectionValue  = "1; mode=block"
-	CSPHeader           = "Content-Security-Policy"
+	stsHeader           = "Strict-Transport-Security"
+	stsSubdomainString  = "; includeSubdomains"
+	frameOptionsHeader  = "X-Frame-Options"
+	frameOptionsValue   = "DENY"
+	contentTypeHeader   = "X-Content-Type-Options"
+	contentTypeValue    = "nosniff"
+	xssProtectionHeader = "X-XSS-Protection"
+	xssProtectionValue  = "1; mode=block"
+	cspHeader           = "Content-Security-Policy"
 )
 
 // Options is a struct for specifying configuration options for the secure.Secure middleware.
@@ -68,84 +68,114 @@ type Options struct {
 	ContentSecurityPolicy string
 }
 
+// Secure is a middleware that helps setup a few basic security features. A single secure.Options struct can be
+// provided to configure which features should be enabled, and the ability to override a few of the default values.
 func Secure(opt Options) martini.Handler {
 	return func(res http.ResponseWriter, req *http.Request, c martini.Context) {
-		// AllowedHost check.
-		if len(opt.AllowedHosts) > 0 {
-			isGoodHost := false
-			for _, allowedHost := range opt.AllowedHosts {
-				if strings.EqualFold(allowedHost, req.Host) {
-					isGoodHost = true
-					break
-				}
-			}
-
-			if isGoodHost == false {
-				http.Error(res, "Bad Host", http.StatusInternalServerError)
-			}
-		}
+		// Allowed hosts check.
+		applyAllowedHosts(opt, res, req)
 
 		// SSL check.
-		if opt.SSLRedirect {
-			isSSL := false
-			if strings.EqualFold(req.URL.Scheme, "https") {
-				isSSL = true
-			} else {
-				for hKey, hVal := range opt.SSLProxyHeaders {
-					if req.Header.Get(hKey) == hVal {
-						isSSL = true
-						break
-					}
-				}
-			}
-
-			if isSSL == false {
-				url := req.URL
-				url.Scheme = "https"
-				url.Host = req.Host
-
-				if opt.SSLHost != "" {
-					url.Host = opt.SSLHost
-				}
-
-				http.Redirect(res, req, url.String(), http.StatusMovedPermanently)
-			}
-		}
+		applySSL(opt, res, req)
 
 		//---------------------------------------------------------------------
 		c.Next()
 		//---------------------------------------------------------------------
 
 		// Strict Transport Security header.
-		if opt.STSSeconds != 0 {
-			stsSub := ""
-			if opt.STSIncludeSubdomains {
-				stsSub = STSSubdomainString
-			}
-
-			res.Header().Add(STSHeader, fmt.Sprintf("max-age=%d%s", opt.STSSeconds, stsSub))
-		}
+		applySTS(opt, res, req)
 
 		// Frame Options header.
-		if opt.CustomFrameOptionsValue != "" {
-			res.Header().Add(FrameOptionsHeader, opt.CustomFrameOptionsValue)
-		} else if opt.FrameDeny {
-			res.Header().Add(FrameOptionsHeader, FrameOptionsValue)
-		}
+		applyFrameOptions(opt, res, req)
 
 		// Content Type Options header.
-		if opt.ContentTypeNosniff {
-			res.Header().Add(ContentTypeHeader, ContentTypeValue)
-		}
+		applyContentTypeOptions(opt, res, req)
 
 		// XSS Protection header.
-		if opt.BrowserXssFilter {
-			res.Header().Add(XSSProtectionHeader, XSSProtectionValue)
-		}
+		applyXSS(opt, res, req)
 
 		// Content Security Policy header.
-		if opt.ContentSecurityPolicy != "" {
-			res.Header().Add(CSPHeader, opt.ContentSecurityPolicy)
+		applyCSP(opt, res, req)
+	}
+}
+
+func applyAllowedHosts(opt Options, res http.ResponseWriter, req *http.Request) {
+	if len(opt.AllowedHosts) > 0 {
+		isGoodHost := false
+		for _, allowedHost := range opt.AllowedHosts {
+			if strings.EqualFold(allowedHost, req.Host) {
+				isGoodHost = true
+				break
+			}
 		}
+
+		if isGoodHost == false {
+			http.Error(res, "Bad Host", http.StatusInternalServerError)
+		}
+	}
+}
+
+func applySSL(opt Options, res http.ResponseWriter, req *http.Request) {
+	if opt.SSLRedirect {
+		isSSL := false
+		if strings.EqualFold(req.URL.Scheme, "https") {
+			isSSL = true
+		} else {
+			for hKey, hVal := range opt.SSLProxyHeaders {
+				if req.Header.Get(hKey) == hVal {
+					isSSL = true
+					break
+				}
+			}
+		}
+
+		if isSSL == false {
+			url := req.URL
+			url.Scheme = "https"
+			url.Host = req.Host
+
+			if opt.SSLHost != "" {
+				url.Host = opt.SSLHost
+			}
+
+			http.Redirect(res, req, url.String(), http.StatusMovedPermanently)
+		}
+	}
+}
+
+func applySTS(opt Options, res http.ResponseWriter, req *http.Request) {
+	if opt.STSSeconds != 0 {
+		stsSub := ""
+		if opt.STSIncludeSubdomains {
+			stsSub = stsSubdomainString
+		}
+
+		res.Header().Add(stsHeader, fmt.Sprintf("max-age=%d%s", opt.STSSeconds, stsSub))
+	}
+}
+
+func applyFrameOptions(opt Options, res http.ResponseWriter, req *http.Request) {
+	if opt.CustomFrameOptionsValue != "" {
+		res.Header().Add(frameOptionsHeader, opt.CustomFrameOptionsValue)
+	} else if opt.FrameDeny {
+		res.Header().Add(frameOptionsHeader, frameOptionsValue)
+	}
+}
+
+func applyContentTypeOptions(opt Options, res http.ResponseWriter, req *http.Request) {
+	if opt.ContentTypeNosniff {
+		res.Header().Add(contentTypeHeader, contentTypeValue)
+	}
+}
+
+func applyXSS(opt Options, res http.ResponseWriter, req *http.Request) {
+	if opt.BrowserXssFilter {
+		res.Header().Add(xssProtectionHeader, xssProtectionValue)
+	}
+}
+
+func applyCSP(opt Options, res http.ResponseWriter, req *http.Request) {
+	if opt.ContentSecurityPolicy != "" {
+		res.Header().Add(cspHeader, opt.ContentSecurityPolicy)
 	}
 }
