@@ -38,7 +38,7 @@ func Test_Render_JSON(t *testing.T) {
 func Test_Render_Indented_JSON(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{
-		IndentJson: true,
+		IndentJSON: true,
 	}))
 
 	// routing

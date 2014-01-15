@@ -86,7 +86,7 @@ type Options struct {
 	// Appends the given charset to the Content-Type header. Default is "UTF-8".
 	Charset string
 	// Outputs human readable JSON
-	IndentJson bool
+	IndentJSON bool
 }
 
 // Renderer is a Middleware that maps a render.Render service into the Martini handler chain. An single variadic render.Options
@@ -186,7 +186,7 @@ type renderer struct {
 func (r *renderer) JSON(status int, v interface{}) {
 	var result []byte
 	var err error
-	if r.opt.IndentJson {
+	if r.opt.IndentJSON {
 		result, err = json.MarshalIndent(v, "", "  ")
 	} else {
 		result, err = json.Marshal(v)
