@@ -66,6 +66,9 @@ type Options struct {
 	BrowserXssFilter bool
 	// ContentSecurityPolicy allows the Content-Security-Policy header value to be set with a custom value. Default is "".
 	ContentSecurityPolicy string
+	// When developing, the SSL and STS options can cause some unwanted effects. Usually testing happens on http, not https... we check `if martini.Env == martini.Prod`.
+	// If you would like your development environment to mimic production with complete SSL redirects and STS headers, set this to true. Default if false.
+	DisableProdCheck bool
 }
 
 // Secure is a middleware that helps setup a few basic security features. A single secure.Options struct can be
@@ -77,10 +80,6 @@ func Secure(opt Options) martini.Handler {
 
 		// SSL check.
 		applySSL(opt, res, req)
-
-		//---------------------------------------------------------------------
-		c.Next()
-		//---------------------------------------------------------------------
 
 		// Strict Transport Security header.
 		applySTS(opt, res, req)
@@ -116,9 +115,9 @@ func applyAllowedHosts(opt Options, res http.ResponseWriter, req *http.Request) 
 }
 
 func applySSL(opt Options, res http.ResponseWriter, req *http.Request) {
-	if opt.SSLRedirect {
+	if opt.SSLRedirect && (martini.Env == martini.Prod || opt.DisableProdCheck == true) {
 		isSSL := false
-		if strings.EqualFold(req.URL.Scheme, "https") {
+		if strings.EqualFold(req.URL.Scheme, "https") || req.TLS != nil {
 			isSSL = true
 		} else {
 			for hKey, hVal := range opt.SSLProxyHeaders {
@@ -144,7 +143,7 @@ func applySSL(opt Options, res http.ResponseWriter, req *http.Request) {
 }
 
 func applySTS(opt Options, res http.ResponseWriter, req *http.Request) {
-	if opt.STSSeconds != 0 {
+	if opt.STSSeconds != 0 && (martini.Env == martini.Prod || opt.DisableProdCheck == true) {
 		stsSub := ""
 		if opt.STSIncludeSubdomains {
 			stsSub = stsSubdomainString

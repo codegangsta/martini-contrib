@@ -3,7 +3,6 @@ Martini middleware that helps enable some quick security wins.
 
 [API Reference](http://godoc.org/github.com/codegangsta/martini-contrib/secure)
 
-
 ## Usage
 
 ~~~ go
@@ -14,6 +13,9 @@ import (
 
 func main() {
   m := martini.Classic()
+
+  martini.Env = martini.Prod  // You have to set the environment to `production` for all of secure to work properly!
+
   m.Use(secure.Secure(secure.Options{
     AllowedHosts: []string{"example.com", "ssl.example.com"},
     SSLRedirect: true,
@@ -43,6 +45,21 @@ X-XSS-Protection: 1; mode=block
 Content-Security-Policy: default-src 'self'
 ~~~
 
+###Set the `MARTINI_ENV` environment variable to `production` when deploying!
+If you don't, the SSLRedirect and STS Header will not work. This allows you to work in development/test mode and not have any annoying redirects to HTTPS (ie. development can happen on http). If this is not the behavior you're expecting, see the `DisableProdCheck` below in the options.
+
+You can also disable the production check for testing like so:
+~~~ go
+//...
+m.Use(secure.Secure(secure.Options{
+    SSLRedirect: true,
+    STSSeconds: 315360000,
+    DisableProdCheck: martini.Env == martini.Test,
+  }))
+//...
+~~~
+
+
 ### Options
 `secure.Secure` comes with a variety of configuration options:
 
@@ -60,6 +77,7 @@ m.Use(secure.Secure(secure.Secure{
   ContentTypeNosniff: true, // If ContentTypeNosniff is true, adds the X-Content-Type-Options header with the value `nosniff`. Default is false.
   BrowserXssFilter: true, // If BrowserXssFilter is true, adds the X-XSS-Protection header with the value `1; mode=block`. Default is false.
   ContentSecurityPolicy: "default-src 'self'", // ContentSecurityPolicy allows the Content-Security-Policy header value to be set with a custom value. Default is "".
+  DisableProdCheck: true, // This will ignore our production check, and will follow the SSLRedirect and STSSeconds/STSIncludeSubdomains options... even in development! This would likely only be used to mimic a production environment on your local development machine.
 }))
 // ...
 ~~~
