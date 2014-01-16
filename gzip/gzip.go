@@ -27,7 +27,7 @@ var serveGzip = func(w http.ResponseWriter, r *http.Request, c martini.Context) 
 	gz := gzip.NewWriter(w)
 	defer gz.Close()
 
-	gzw := gzipResponseWriter{gz, martini.NewResponseWriter(w)}
+	gzw := gzipResponseWriter{gz, w.(martini.ResponseWriter)}
 	c.MapTo(gzw, (*http.ResponseWriter)(nil))
 
 	c.Next()
