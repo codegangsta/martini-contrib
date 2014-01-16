@@ -11,9 +11,15 @@ import (
 func Test_GzipAll(t *testing.T) {
 	// Set up
 	recorder := httptest.NewRecorder()
+	before := false
 
 	m := martini.New()
 	m.Use(All())
+	m.Use(func(r http.ResponseWriter) {
+		r.(martini.ResponseWriter).Before(func(rw martini.ResponseWriter) {
+			before = true
+		})
+	})
 
 	r, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
@@ -46,5 +52,9 @@ func Test_GzipAll(t *testing.T) {
 	ce = recorder.Header().Get(HeaderContentEncoding)
 	if !strings.EqualFold(ce, "gzip") {
 		t.Error(HeaderContentEncoding + " is not 'gzip'")
+	}
+
+	if before == false {
+		t.Error("Before hook was not called")
 	}
 }
