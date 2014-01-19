@@ -42,7 +42,7 @@ Your user type should meet the login.User interface:
 
 The SessionUser() Martini middleware will inject the login.User interface
 into your route handlers. These interfaces must be converted to your
-appropriate type to function correcty.
+appropriate type to function correctly.
 
 ```go
    func handler(user login.User, db *MyDB) {

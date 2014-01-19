@@ -1,9 +1,9 @@
 // Package login is a middleware for Martini that provides a simple way to track user sessions
-// in on a website. Please see the README for a more detailed description of the package.
+// in on a website. Please see https://github.com/codegangsta/martini-contrib/sessionauth/README.md
+// for a more detailed description of the package.
 package sessionauth
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/codegangsta/martini"
 	"github.com/codegangsta/martini-contrib/render"
@@ -24,21 +24,29 @@ type User interface {
 
 	// Clear any sensitive data out of the user
 	Logout()
+
+	// Return the unique identifier of this user object
+	UniqueId() interface{}
+
+	// Populate this user object with values
+	GetById(id interface{}) error
 }
 
-// SessionUser will try to read a valid user object out of the session. Then it will
-// inject that object, or the zero value user object (from newUser) into the context.
+// SessionUser will try to read a unique user ID out of the session. Then it tries
+// to populate an anonymous user object from the database based on that ID. If this
+// is successful, the valid user is mapped into the context. Otherwise the anonymous
+// user is mapped into the contact.
 // The newUser() function should provide a valid 0value structure for the caller's
 // user type.
 func SessionUser(newUser func() User) martini.Handler {
 	return func(s sessions.Session, c martini.Context, l *log.Logger) {
-		userJson := s.Get("AUTHUSER")
+		userId := s.Get("AUTHUNIQUEID")
 		user := newUser()
 
-		if userJson != nil {
-			err := json.Unmarshal(userJson.([]byte), user)
+		if userId != nil {
+			err := user.GetById(userId)
 			if err != nil {
-				l.Printf("Could not unmarshal user: %v", userJson)
+				l.Printf("Login Error: %v\n", err)
 			} else {
 				user.Login()
 			}
@@ -48,9 +56,9 @@ func SessionUser(newUser func() User) martini.Handler {
 	}
 }
 
-// AuthenticatSession will mark the session and user object as authenticated. Then
+// AuthenticateSession will mark the session and user object as authenticated. Then
 // the Login() user function will be called. This function should be called after
-//you have validated a user.
+// you have validated a user.
 func AuthenticateSession(s sessions.Session, user User) error {
 	user.Login()
 	return UpdateUser(s, user)
@@ -59,14 +67,14 @@ func AuthenticateSession(s sessions.Session, user User) error {
 // Logout will clear out the session and call the Logout() user function.
 func Logout(s sessions.Session, user User) {
 	user.Logout()
-	s.Delete("AUTHUSER")
+	s.Delete("AUTHUNIQUEID")
 }
 
 // LoginRequired verifies that the current user is authenticated. Any routes that
 // require a login should have this handler placed in the flow. If the user is not
 // authenticated, they will be redirected to /login with the "next" get parameter
 // set to the attempted URL.
-func LoginRequired(r render.Render, user User, w http.ResponseWriter, req *http.Request) {
+func LoginRequired(r render.Render, user User, req *http.Request) {
 	if user.IsAuthenticated() == false {
 		path := fmt.Sprintf("/login?next=%s", req.URL.Path)
 		r.Redirect(path, 302)
@@ -76,11 +84,6 @@ func LoginRequired(r render.Render, user User, w http.ResponseWriter, req *http.
 // UpdateUser updates the User object stored in the session. This is useful incase a change
 // is made to the user model that needs to persist across requests.
 func UpdateUser(s sessions.Session, user User) error {
-	userJson, err := json.Marshal(user)
-	if err != nil {
-		return err
-	}
-
-	s.Set("AUTHUSER", userJson)
+	s.Set("AUTHUNIQUEID", user.UniqueId())
 	return nil
 }

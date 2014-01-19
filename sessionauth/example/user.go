@@ -6,9 +6,10 @@ import (
 
 // MyUserModel can be any struct that represents a user in my system
 type MyUserModel struct {
-	Name          string `form:"name"`
-	Id            int64  `form:"id"`
-	authenticated bool   `form:"-"`
+	Id            int64  `form:"id" db:"id"`
+	Username      string `form:"name" db:"username"`
+	Password      string `form:"password" db:"password"`
+	authenticated bool   `form:"-" db:"-"`
 }
 
 // GetAnonymousUser should generate an anonymous user model
@@ -36,4 +37,19 @@ func (u *MyUserModel) Logout() {
 
 func (u *MyUserModel) IsAuthenticated() bool {
 	return u.authenticated
+}
+
+func (u *MyUserModel) UniqueId() interface{} {
+	return u.Id
+}
+
+// GetById will populate a user object from a database model with
+// a matching id.
+func (u *MyUserModel) GetById(id interface{}) error {
+	err := dbmap.SelectOne(u, "SELECT * FROM users WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
