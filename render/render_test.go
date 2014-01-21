@@ -36,6 +36,30 @@ func Test_Render_JSON(t *testing.T) {
 	expect(t, res.Body.String(), `{"one":"hello","two":"world"}`)
 }
 
+func Test_Render_Indented_JSON(t *testing.T) {
+	m := martini.Classic()
+	m.Use(Renderer(Options{
+		IndentJSON: true,
+	}))
+
+	// routing
+	m.Get("/foobar", func(r Render) {
+		r.JSON(300, Greeting{"hello", "world"})
+	})
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/foobar", nil)
+
+	m.ServeHTTP(res, req)
+
+	expect(t, res.Code, 300)
+	expect(t, res.Header().Get(ContentType), ContentJSON+"; charset=UTF-8")
+	expect(t, res.Body.String(), `{
+  "one": "hello",
+  "two": "world"
+}`)
+}
+
 func Test_Render_Bad_HTML(t *testing.T) {
 	m := martini.Classic()
 	m.Use(Renderer(Options{

@@ -87,6 +87,8 @@ type Options struct {
 	Delims Delims
 	// Appends the given charset to the Content-Type header. Default is "UTF-8".
 	Charset string
+	// Outputs human readable JSON
+	IndentJSON bool
 }
 
 // HTMLOptions is a struct for overriding some rendering Options for specific HTML call
@@ -191,7 +193,13 @@ type renderer struct {
 }
 
 func (r *renderer) JSON(status int, v interface{}) {
-	result, err := json.Marshal(v)
+	var result []byte
+	var err error
+	if r.opt.IndentJSON {
+		result, err = json.MarshalIndent(v, "", "  ")
+	} else {
+		result, err = json.Marshal(v)
+	}
 	if err != nil {
 		http.Error(r, err.Error(), 500)
 		return
