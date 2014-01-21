@@ -43,12 +43,11 @@ func renderRecovery(res http.ResponseWriter, req *http.Request, err interface{},
 		"Lines":    readErrorFileLines(filePath, line),
 	}
 
-	rw := res.(martini.ResponseWriter)
-	rw.Header().Set("Content-Type", "text/html")
-	rw.WriteHeader(http.StatusInternalServerError)
+	res.Header().Set("Content-Type", "text/html")
+	res.WriteHeader(http.StatusInternalServerError)
 
 	tpl := template.Must(template.New("ErrorPage").Parse(panicPageTpl))
-	tpl.Execute(rw, data)
+	tpl.Execute(res, data)
 }
 
 func readErrorFileLines(filePath string, errorLine int) map[int]string {
