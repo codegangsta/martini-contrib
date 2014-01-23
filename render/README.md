@@ -21,7 +21,8 @@ func main() {
   m.Use(render.Renderer())
 
   m.Get("/", func(r render.Render) {
-    r.HTML(200, "hello", "jeremy")
+    r.AddData("Name", "jeremy")
+    r.HTML(200, "hello")
   })
 
   m.Run()
@@ -31,7 +32,7 @@ func main() {
 
 ~~~ html
 <!-- templates/hello.tmpl -->
-<h2>Hello {{.}}!</h2>
+<h2>Hello {{.Name}}!</h2>
 ~~~
 
 ### Options
@@ -112,7 +113,8 @@ func main() {
 
   // This will set the Content-Type header to "text/html; charset=UTF-8"
   m.Get("/", func(r render.Render) {
-    r.HTML(200, "hello", "world")
+    r.AddData("Name", "world")
+    r.HTML(200, "hello")
   })
 
   // This will set the Content-Type header to "application/json; charset=UTF-8"
@@ -143,7 +145,8 @@ func main() {
 
   // This is set the Content-Type to "text/html; charset=ISO-8859-1"
   m.Get("/", func(r render.Render) {
-    r.HTML(200, "hello", "world")
+    r.AddData("Name", "world")
+    r.HTML(200, "hello")
   })
 
   // This is set the Content-Type to "application/json; charset=ISO-8859-1"
@@ -159,3 +162,4 @@ func main() {
 ## Authors
 * [Jeremy Saenz](http://github.com/codegangsta)
 * [Cory Jacobsen](http://github.com/cojac)
+* [Andrew Wayne](http://github.com/dre1080)

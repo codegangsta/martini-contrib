@@ -12,7 +12,13 @@
 //    m.Use(render.Renderer()) // reads "templates" directory by default
 //
 //    m.Get("/html", func(r render.Render) {
-//      r.HTML(200, "mytemplate", nil)
+//      r.HTML(200, "mytemplate")
+//    })
+//
+//    m.Get("/html", func(r render.Render) {
+// 			r.AddData("AppName", "Martini")
+// 			r.AddData("Mode", martini.Env)
+//      r.HTML(200, "mytemplate")
 //    })
 //
 //    m.Get("/json", func(r render.Render) {
@@ -55,10 +61,14 @@ var helperFuncs = template.FuncMap{
 // Render is a service that can be injected into a Martini handler. Render provides functions for easily writing JSON and
 // HTML templates out to a http Response.
 type Render interface {
+	// AddData inserts data into the HTML template context
+	AddData(key interface{}, v interface{})
+	// ClearData deletes data with the given key from the HTML template context
+	ClearData(key interface{})
 	// JSON writes the given status and JSON serialized version of the given value to the http.ResponseWriter.
 	JSON(status int, v interface{})
 	// HTML renders a html template specified by the name and writes the result and given status to the http.ResponseWriter.
-	HTML(status int, name string, v interface{}, htmlOpt ...HTMLOptions)
+	HTML(status int, name string, htmlOpt ...HTMLOptions)
 	// Error is a convenience function that writes an http status to the http.ResponseWriter.
 	Error(status int)
 	// A convienience function that sends an HTTP redirect. If status is omitted, uses 302 (Found)
@@ -107,13 +117,14 @@ func Renderer(options ...Options) martini.Handler {
 	opt := prepareOptions(options)
 	cs := prepareCharset(opt.Charset)
 	t := compile(opt)
+	d := make(map[interface{}]interface{})
 	return func(res http.ResponseWriter, req *http.Request, c martini.Context) {
 		// recompile for easy development
 		if martini.Env == martini.Dev {
 			t = compile(opt)
 		}
 		tc, _ := t.Clone()
-		c.MapTo(&renderer{res, req, tc, opt, cs}, (*Render)(nil))
+		c.MapTo(&renderer{res, req, tc, opt, cs, d}, (*Render)(nil))
 	}
 }
 
@@ -190,6 +201,7 @@ type renderer struct {
 	t               *template.Template
 	opt             Options
 	compiledCharset string
+	data            map[interface{}]interface{}
 }
 
 func (r *renderer) JSON(status int, v interface{}) {
@@ -211,15 +223,15 @@ func (r *renderer) JSON(status int, v interface{}) {
 	r.Write(result)
 }
 
-func (r *renderer) HTML(status int, name string, binding interface{}, htmlOpt ...HTMLOptions) {
+func (r *renderer) HTML(status int, name string, htmlOpt ...HTMLOptions) {
 	opt := r.prepareHTMLOptions(htmlOpt)
 	// assign a layout if there is one
 	if len(opt.Layout) > 0 {
-		r.addYield(name, binding)
+		r.addYield(name)
 		name = opt.Layout
 	}
 
-	out, err := r.execute(name, binding)
+	out, err := r.execute(name)
 	if err != nil {
 		http.Error(r, err.Error(), http.StatusInternalServerError)
 		return
@@ -242,6 +254,14 @@ func (r *renderer) prepareHTMLOptions(htmlOpt []HTMLOptions) HTMLOptions {
 	}
 }
 
+func (r *renderer) AddData(key interface{}, v interface{}) {
+	r.data[key] = v
+}
+
+func (r *renderer) ClearData(key interface{}) {
+	delete(r.data, key)
+}
+
 // Error writes the given HTTP status to the current ResponseWriter
 func (r *renderer) Error(status int) {
 	r.WriteHeader(status)
@@ -256,15 +276,15 @@ func (r *renderer) Redirect(location string, status ...int) {
 	http.Redirect(r, r.req, location, code)
 }
 
-func (r *renderer) execute(name string, binding interface{}) (*bytes.Buffer, error) {
+func (r *renderer) execute(name string) (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
-	return buf, r.t.ExecuteTemplate(buf, name, binding)
+	return buf, r.t.ExecuteTemplate(buf, name, r.data)
 }
 
-func (r *renderer) addYield(name string, binding interface{}) {
+func (r *renderer) addYield(name string) {
 	funcs := template.FuncMap{
 		"yield": func() (template.HTML, error) {
-			buf, err := r.execute(name, binding)
+			buf, err := r.execute(name)
 			// return safe html here since we are rendering our own template
 			return template.HTML(buf.String()), err
 		},
