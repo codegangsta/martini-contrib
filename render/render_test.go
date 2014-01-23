@@ -68,7 +68,7 @@ func Test_Render_Bad_HTML(t *testing.T) {
 
 	// routing
 	m.Get("/foobar", func(r Render) {
-		r.HTML(200, "nope", nil)
+		r.HTML(200, "nope")
 	})
 
 	res := httptest.NewRecorder()
@@ -88,7 +88,8 @@ func Test_Render_HTML(t *testing.T) {
 
 	// routing
 	m.Get("/foobar", func(r Render) {
-		r.HTML(200, "hello", "jeremy")
+		r.AddData("Name", "jeremy")
+		r.HTML(200, "hello")
 	})
 
 	res := httptest.NewRecorder()
@@ -110,7 +111,7 @@ func Test_Render_Extensions(t *testing.T) {
 
 	// routing
 	m.Get("/foobar", func(r Render) {
-		r.HTML(200, "hypertext", nil)
+		r.HTML(200, "hypertext")
 	})
 
 	res := httptest.NewRecorder()
@@ -139,7 +140,8 @@ func Test_Render_Funcs(t *testing.T) {
 
 	// routing
 	m.Get("/foobar", func(r Render) {
-		r.HTML(200, "index", "jeremy")
+		r.AddData("Name", "jeremy")
+		r.HTML(200, "index")
 	})
 
 	res := httptest.NewRecorder()
@@ -159,7 +161,8 @@ func Test_Render_Layout(t *testing.T) {
 
 	// routing
 	m.Get("/foobar", func(r Render) {
-		r.HTML(200, "content", "jeremy")
+		r.AddData("Name", "jeremy")
+		r.HTML(200, "content")
 	})
 
 	res := httptest.NewRecorder()
@@ -178,7 +181,8 @@ func Test_Render_Nested_HTML(t *testing.T) {
 
 	// routing
 	m.Get("/foobar", func(r Render) {
-		r.HTML(200, "admin/index", "jeremy")
+		r.AddData("Name", "jeremy")
+		r.HTML(200, "admin/index")
 	})
 
 	res := httptest.NewRecorder()
@@ -200,7 +204,8 @@ func Test_Render_Delimiters(t *testing.T) {
 
 	// routing
 	m.Get("/foobar", func(r Render) {
-		r.HTML(200, "delims", "jeremy")
+		r.Set("Name", "jeremy")
+		r.HTML(200, "delims")
 	})
 
 	res := httptest.NewRecorder()
@@ -210,19 +215,19 @@ func Test_Render_Delimiters(t *testing.T) {
 
 	expect(t, res.Code, 200)
 	expect(t, res.Header().Get(ContentType), ContentHTML+"; charset=UTF-8")
-	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>")
+	expect(t, res.Body.String(), "<h1>Hello jeremy</h1>\n")
 }
 
 func Test_Render_Error404(t *testing.T) {
 	res := httptest.NewRecorder()
-	r := renderer{res, nil, nil, Options{}, ""}
+	r := renderer{res, nil, nil, Options{}, "", nil}
 	r.Error(404)
 	expect(t, res.Code, 404)
 }
 
 func Test_Render_Error500(t *testing.T) {
 	res := httptest.NewRecorder()
-	r := renderer{res, nil, nil, Options{}, ""}
+	r := renderer{res, nil, nil, Options{}, "", nil}
 	r.Error(500)
 	expect(t, res.Code, 500)
 }
@@ -235,7 +240,7 @@ func Test_Render_Redirect_Default(t *testing.T) {
 	}
 	res := httptest.NewRecorder()
 
-	r := renderer{res, &req, nil, Options{}, ""}
+	r := renderer{res, &req, nil, Options{}, "", nil}
 	r.Redirect("two")
 
 	expect(t, res.Code, 302)
@@ -250,7 +255,7 @@ func Test_Render_Redirect_Code(t *testing.T) {
 	}
 	res := httptest.NewRecorder()
 
-	r := renderer{res, &req, nil, Options{}, ""}
+	r := renderer{res, &req, nil, Options{}, "", nil}
 	r.Redirect("two", 307)
 
 	expect(t, res.Code, 307)
@@ -286,7 +291,8 @@ func Test_Render_Default_Charset_HTML(t *testing.T) {
 
 	// routing
 	m.Get("/foobar", func(r Render) {
-		r.HTML(200, "hello", "jeremy")
+		r.AddData("Name", "jeremy")
+		r.HTML(200, "hello")
 	})
 
 	res := httptest.NewRecorder()
@@ -308,7 +314,8 @@ func Test_Render_Override_Layout(t *testing.T) {
 
 	// routing
 	m.Get("/foobar", func(r Render) {
-		r.HTML(200, "content", "jeremy", HTMLOptions{
+		r.AddData("Name", "jeremy")
+		r.HTML(200, "content", HTMLOptions{
 			Layout: "another_layout",
 		})
 	})
