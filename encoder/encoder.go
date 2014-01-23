@@ -47,7 +47,7 @@ func (_ JsonEncoder) Encode(v ...interface{}) ([]byte, error) {
 	}
 
 	if t.Kind() == reflect.Struct {
-		result = copyStruct(reflect.ValueOf(data).Elem(), t).Interface()
+		result = copyStruct(reflect.ValueOf(data), t).Interface()
 	} else {
 		result = data
 	}
@@ -59,6 +59,10 @@ func (_ JsonEncoder) Encode(v ...interface{}) ([]byte, error) {
 
 func copyStruct(v reflect.Value, t reflect.Type) reflect.Value {
 	result := reflect.New(t).Elem()
+
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
 
 	for i := 0; i < v.NumField(); i++ {
 		if tag := t.Field(i).Tag.Get("out"); tag == "false" {
