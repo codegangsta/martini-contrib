@@ -61,8 +61,10 @@ type Render interface {
 	HTML(status int, name string, v interface{}, htmlOpt ...HTMLOptions)
 	// Error is a convenience function that writes an http status to the http.ResponseWriter.
 	Error(status int)
-	// A convienience function that sends an HTTP redirect. If status is omitted, uses 302 (Found)
+	// Redirect is a convienience function that sends an HTTP redirect. If status is omitted, uses 302 (Found)
 	Redirect(location string, status ...int)
+	// Template returns the internal *template.Template used to render the HTML
+	Template() *template.Template
 }
 
 // Delims represents a set of Left and Right delimiters for HTML template rendering
@@ -232,16 +234,6 @@ func (r *renderer) HTML(status int, name string, binding interface{}, htmlOpt ..
 	io.Copy(r, out)
 }
 
-func (r *renderer) prepareHTMLOptions(htmlOpt []HTMLOptions) HTMLOptions {
-	if len(htmlOpt) > 0 {
-		return htmlOpt[0]
-	}
-
-	return HTMLOptions{
-		Layout: r.opt.Layout,
-	}
-}
-
 // Error writes the given HTTP status to the current ResponseWriter
 func (r *renderer) Error(status int) {
 	r.WriteHeader(status)
@@ -254,6 +246,10 @@ func (r *renderer) Redirect(location string, status ...int) {
 	}
 
 	http.Redirect(r, r.req, location, code)
+}
+
+func (r *renderer) Template() *template.Template {
+	return r.t
 }
 
 func (r *renderer) execute(name string, binding interface{}) (*bytes.Buffer, error) {
@@ -270,4 +266,14 @@ func (r *renderer) addYield(name string, binding interface{}) {
 		},
 	}
 	r.t.Funcs(funcs)
+}
+
+func (r *renderer) prepareHTMLOptions(htmlOpt []HTMLOptions) HTMLOptions {
+	if len(htmlOpt) > 0 {
+		return htmlOpt[0]
+	}
+
+	return HTMLOptions{
+		Layout: r.opt.Layout,
+	}
 }
