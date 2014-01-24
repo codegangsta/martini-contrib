@@ -31,7 +31,7 @@ Here is a ready to use example:
 package main
 
 import (
-	"github.com/3d0c/martini-contrib/encoder"
+	"github.com/codegangsta/martini-contrib/encoder"
 	"github.com/codegangsta/martini"
 	"log"
 	"net/http"
