@@ -34,7 +34,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 )
 
 const (
@@ -227,7 +226,6 @@ func (r *renderer) HTML(status int, name string, binding interface{}, htmlOpt ..
 
 	// template rendered fine, write out the result
 	r.Header().Set(ContentType, ContentHTML+r.compiledCharset)
-	r.Header().Set(ContentLength, strconv.Itoa(out.Len()))
 	r.WriteHeader(status)
 	io.Copy(r, out)
 }
