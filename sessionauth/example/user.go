@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/rday/martini-login/sessionauth"
+	"github.com/codegangsta/martini-contrib/sessionauth"
 )
 
 // MyUserModel can be any struct that represents a user in my system
