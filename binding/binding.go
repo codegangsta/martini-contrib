@@ -57,7 +57,7 @@ func Form(formStruct interface{}) martini.Handler {
 		ensureNotPointer(formStruct)
 		formStruct := reflect.New(reflect.TypeOf(formStruct))
 		errors := newErrors()
-		parseErr := req.ParseForm()
+		parseErr := req.ParseMultipartForm(MaxMemory)
 
 		if parseErr != nil {
 			errors.Overall[DeserializationError] = parseErr.Error()
@@ -281,6 +281,10 @@ type (
 	Validator interface {
 		Validate(*Errors, *http.Request)
 	}
+)
+
+var (
+	MaxMemory = int64(1024 * 1024 * 10) // 10 MB default
 )
 
 const (
