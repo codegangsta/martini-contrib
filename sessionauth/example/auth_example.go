@@ -11,7 +11,7 @@ import (
 	"github.com/codegangsta/martini-contrib/sessions"
 	"github.com/coopernurse/gorp"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/rday/martini-login/sessionauth"
+	"github.com/codegangsta/martini-contrib/sessionauth"
 	"log"
 	"net/http"
 	"os"

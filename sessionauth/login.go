@@ -1,5 +1,5 @@
 // Package login is a middleware for Martini that provides a simple way to track user sessions
-// in on a website. Please see https://github.com/codegangsta/martini-contrib/sessionauth/README.md
+// in on a website. Please see https://github.com/codegangsta/martini-contrib/blob/master/sessionauth/README.md
 // for a more detailed description of the package.
 package sessionauth
 
