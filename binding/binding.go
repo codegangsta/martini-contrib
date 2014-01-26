@@ -4,6 +4,9 @@ package binding
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"labix.org/v2/mgo/bson"
+	"log"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -67,16 +70,25 @@ func Form(formStruct interface{}) martini.Handler {
 
 		for i := 0; i < typ.NumField(); i++ {
 			typeField := typ.Field(i)
-			if inputFieldName := typeField.Tag.Get("form"); inputFieldName != "" {
-				inputValue := req.Form.Get(inputFieldName)
-				structField := formStruct.Elem().Field(i)
 
-				if !structField.CanSet() {
-					continue
-				}
+			var inputFieldName, inputValue string
 
-				setWithProperType(typeField, inputValue, structField, inputFieldName, errors)
+			if inputFieldName = typeField.Tag.Get("form"); inputFieldName != "" {
+				inputValue = req.Form.Get(inputFieldName)
+			} else if inputFieldName = typeField.Tag.Get("url"); inputFieldName != "" {
+				inputValue = req.URL.Query().Get(inputFieldName)
+			} else {
+				continue
 			}
+
+			structField := formStruct.Elem().Field(i)
+
+			if !structField.CanSet() {
+				continue
+			}
+
+			setWithProperType(typeField, inputValue, structField, inputFieldName, errors)
+
 		}
 
 		validateAndMap(formStruct, context, errors)
@@ -88,6 +100,8 @@ func Form(formStruct interface{}) martini.Handler {
 // validated, but no error handling is actually performed here.
 func Json(jsonStruct interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
+		var payload map[string]interface{}
+
 		ensureNotPointer(jsonStruct)
 		jsonStruct := reflect.New(reflect.TypeOf(jsonStruct))
 		errors := newErrors()
@@ -96,12 +110,84 @@ func Json(jsonStruct interface{}) martini.Handler {
 			defer req.Body.Close()
 		}
 
-		if err := json.NewDecoder(req.Body).Decode(jsonStruct.Interface()); err != nil {
+		content, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			errors.Overall[DeserializationError] = err.Error()
+		} else if err = json.Unmarshal(content, &payload); err != nil {
 			errors.Overall[DeserializationError] = err.Error()
 		}
 
+		typ := jsonStruct.Elem().Type()
+
+		fillStruct(payload, typ, jsonStruct.Elem(), errors)
+
 		validateAndMap(jsonStruct, context, errors)
 	}
+}
+
+func jsonVal(name string, i interface{}) (interface{}, bool) {
+	if _, ok := i.(map[string]interface{}); !ok {
+		return nil, false
+	}
+
+	if v, ok := i.(map[string]interface{})[name]; !ok || v == nil {
+		return nil, false
+	} else {
+		return v, true
+	}
+}
+
+func fillStruct(src interface{}, typ reflect.Type, dst reflect.Value, errors *Errors) {
+	var typeObjectId = reflect.TypeOf(bson.ObjectId(""))
+
+	for i := 0; i < typ.NumField(); i++ {
+		var jsonTags []string
+
+		typeField := typ.Field(i)
+		if typeField.Tag.Get("binding") == "-" {
+			continue
+		}
+
+		structField := dst.Field(i)
+		if !structField.CanSet() {
+			continue
+		}
+
+		if jsonTags = strings.Split(typeField.Tag.Get("json"), ","); jsonTags[0] == "" {
+			continue
+		}
+
+		if typeField.Type.Kind() == reflect.Struct {
+			fillStruct(src.(map[string]interface{})[jsonTags[0]], typeField.Type, structField, errors)
+			continue
+		}
+
+		var sv reflect.Value
+
+		value, found := jsonVal(jsonTags[0], src)
+		if !found {
+			sv = reflect.Zero(typeField.Type)
+			continue
+		}
+
+		switch typeField.Type {
+		case typeObjectId:
+			if bson.IsObjectIdHex(value.(string)) {
+				sv = reflect.ValueOf(bson.ObjectIdHex(value.(string)))
+			} else {
+				log.Println("Warning! typeObjectId is empty or has illegal value:", value)
+				sv = reflect.Zero(typeObjectId)
+			}
+			break
+
+		default:
+			sv = reflect.ValueOf(value)
+			break
+		}
+
+		structField.Set(sv)
+	}
+
 }
 
 // Validate is middleware to enforce required fields. If the struct
