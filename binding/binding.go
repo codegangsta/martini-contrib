@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"reflect"
-	"strconv"
 	"strings"
 
+	"github.com/ajg/form"
 	"github.com/codegangsta/martini"
 )
 
@@ -48,50 +48,25 @@ func Bind(obj interface{}) martini.Handler {
 }
 
 // Form is middleware to deserialize form-urlencoded data from the request.
-// It gets data from the form-urlencoded body, if present, or from the
-// query string. It uses the http.Request.ParseMultipartForm() method
-// to perform deserialization, then reflection is used to map each field
-// into the struct with the proper type. Structs with primitive slice types
-// (bool, float, int, string) can support deserialization of repeated form
-// keys, for example: key=val1&key=val2&key=val3
+// It gets data from the form-urlencoded body, if present, or from the query
+// string. It uses the `form` package to to perform decoding. Values of any kind
+// can be repeated in a struct; for example: key.0=val1&key.1=val2&key.2=val3
 func Form(formStruct interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
 		ensureNotPointer(formStruct)
 		formStruct := reflect.New(reflect.TypeOf(formStruct))
 		errors := newErrors()
-		parseErr := req.ParseMultipartForm(MaxMemory)
 
-		if parseErr != nil {
-			errors.Overall[DeserializationError] = parseErr.Error()
+		if err := form.DecodeValues(formStruct.Interface(), req.URL.Query()); err != nil {
+			errors.Overall[DeserializationError] = err.Error()
 		}
 
-		typ := formStruct.Elem().Type()
+		if req.Body != nil {
+			defer req.Body.Close()
+		}
 
-		for i := 0; i < typ.NumField(); i++ {
-			typeField := typ.Field(i)
-			if inputFieldName := typeField.Tag.Get("form"); inputFieldName != "" {
-				structField := formStruct.Elem().Field(i)
-				if !structField.CanSet() {
-					continue
-				}
-
-				inputValue, exists := req.Form[inputFieldName]
-				if !exists {
-					continue
-				}
-
-				numElems := len(inputValue)
-				if structField.Kind() == reflect.Slice && numElems > 0 {
-					sliceOf := structField.Type().Elem().Kind()
-					slice := reflect.MakeSlice(structField.Type(), numElems, numElems)
-					for i := 0; i < numElems; i++ {
-						setWithProperType(sliceOf, inputValue[i], slice.Index(i), inputFieldName, errors)
-					}
-					formStruct.Elem().Field(i).Set(slice)
-				} else {
-					setWithProperType(typeField.Type.Kind(), inputValue[0], structField, inputFieldName, errors)
-				}
-			}
+		if err := form.NewDecoder(req.Body).Decode(formStruct.Interface()); err != nil {
+			errors.Overall[DeserializationError] = err.Error()
 		}
 
 		validateAndMap(formStruct, context, errors)
@@ -182,57 +157,6 @@ func ErrorHandler(errs Errors, resp http.ResponseWriter) {
 		errOutput, _ := json.Marshal(errs)
 		resp.Write(errOutput)
 		return
-	}
-}
-
-// This sets the value in a struct of an indeterminate type to the
-// matching value from the request (via Form middleware) in the
-// same type, so that not all deserialized values have to be strings.
-// Supported types are string, int, float, and bool.
-func setWithProperType(valueKind reflect.Kind, val string, structField reflect.Value, nameInTag string, errors *Errors) {
-	switch valueKind {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if val == "" {
-			val = "0"
-		}
-		intVal, err := strconv.Atoi(val)
-		if err != nil {
-			errors.Fields[nameInTag] = IntegerTypeError
-		} else {
-			structField.SetInt(int64(intVal))
-		}
-	case reflect.Bool:
-		if val == "" {
-			val = "false"
-		}
-		boolVal, err := strconv.ParseBool(val)
-		if err != nil {
-			errors.Fields[nameInTag] = BooleanTypeError
-		} else {
-			structField.SetBool(boolVal)
-		}
-	case reflect.Float32:
-		if val == "" {
-			val = "0.0"
-		}
-		floatVal, err := strconv.ParseFloat(val, 32)
-		if err != nil {
-			errors.Fields[nameInTag] = FloatTypeError
-		} else {
-			structField.SetFloat(floatVal)
-		}
-	case reflect.Float64:
-		if val == "" {
-			val = "0.0"
-		}
-		floatVal, err := strconv.ParseFloat(val, 64)
-		if err != nil {
-			errors.Fields[nameInTag] = FloatTypeError
-		} else {
-			structField.SetFloat(floatVal)
-		}
-	case reflect.String:
-		structField.SetString(val)
 	}
 }
 
