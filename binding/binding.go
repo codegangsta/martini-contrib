@@ -47,11 +47,13 @@ func Bind(obj interface{}) martini.Handler {
 	}
 }
 
-// Form is middleware to deserialize Form-encoded data from the request.
-// It gets data from the form-urlencoded payload, if present, or from the
-// query string as well. It uses the http.Request.ParseForm() method to
-// perform deserialization, then reflection is used to map each field
-// into the struct with the proper type.
+// Form is middleware to deserialize form-urlencoded data from the request.
+// It gets data from the form-urlencoded body, if present, or from the
+// query string. It uses the http.Request.ParseMultipartForm() method
+// to perform deserialization, then reflection is used to map each field
+// into the struct with the proper type. Structs with primitive slice types
+// (bool, float, int, string) can support deserialization of repeated form
+// keys, for example: key=val1&key=val2&key=val3
 func Form(formStruct interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
 		ensureNotPointer(formStruct)
@@ -297,7 +299,9 @@ type (
 )
 
 var (
-	MaxMemory = int64(1024 * 1024 * 10) // 10 MB default
+	// Maximum amount of memory to use when parsing a multipart form.
+	// Set this to whatever value you prefer; default is 10 MB.
+	MaxMemory = int64(1024 * 1024 * 10)
 )
 
 const (
