@@ -92,10 +92,21 @@ func handle(test testCase, t *testing.T, index int, post BlogPost, errors Errors
 	assertEqualField(t, "Content", index, test.ref.Content, post.Content)
 	assertEqualField(t, "Views", index, test.ref.Views, post.Views)
 
+	for i := range test.ref.Multiple {
+		if i >= len(post.Multiple) {
+			t.Errorf("Expected: %v (size %d) to have same size as: %v (size %d)", post.Multiple, len(post.Multiple), test.ref.Multiple, len(test.ref.Multiple))
+			break
+		}
+		if test.ref.Multiple[i] != post.Multiple[i] {
+			t.Errorf("Expected: %v to deep equal: %v", post.Multiple, test.ref.Multiple)
+			break
+		}
+	}
+
 	if test.ok && errors.Count() > 0 {
-		t.Errorf("%v should be OK (0 errors), but had errors: %v", test, errors)
+		t.Errorf("%+v should be OK (0 errors), but had errors: %+v", test, errors)
 	} else if !test.ok && errors.Count() == 0 {
-		t.Errorf("%v should have errors, but was OK (0 errors): %v", test)
+		t.Errorf("%+v should have errors, but was OK (0 errors): %+v", test)
 	}
 }
 
@@ -117,8 +128,8 @@ func TestValidate(t *testing.T) {
 		}
 	}
 
-	performValidationTest(&BlogPost{"", "...", 0, 0}, handlerMustErr, t)
-	performValidationTest(&BlogPost{"Good Title", "Good content", 0, 0}, handlerNoErr, t)
+	performValidationTest(&BlogPost{"", "...", 0, 0, []int{}}, handlerMustErr, t)
+	performValidationTest(&BlogPost{"Good Title", "Good content", 0, 0, []int{}}, handlerNoErr, t)
 
 	performValidationTest(&User{Name: "Jim", Home: Address{"", ""}}, handlerMustErr, t)
 	performValidationTest(&User{Name: "Jim", Home: Address{"required", ""}}, handlerNoErr, t)
@@ -164,6 +175,7 @@ type (
 		Content  string `form:"content" json:"content"`
 		Views    int    `form:"views" json:"views"`
 		internal int    `form:"-"`
+		Multiple []int  `form:"multiple"`
 	}
 
 	User struct {
@@ -274,6 +286,14 @@ var (
 			"",
 			false, // false because POST requests should have a body, not just a query string
 			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Views: 3},
+		},
+		{
+			"GET",
+			path + "?content=This is the content&title=Blog+Post+Title&views=3&multiple=5&multiple=10&multiple=15&multiple=20",
+			"",
+			"",
+			true,
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Views: 3, Multiple: []int{5, 10, 15, 20}},
 		},
 	}
 

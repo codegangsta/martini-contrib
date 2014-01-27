@@ -68,14 +68,27 @@ func Form(formStruct interface{}) martini.Handler {
 		for i := 0; i < typ.NumField(); i++ {
 			typeField := typ.Field(i)
 			if inputFieldName := typeField.Tag.Get("form"); inputFieldName != "" {
-				inputValue := req.Form.Get(inputFieldName)
 				structField := formStruct.Elem().Field(i)
-
 				if !structField.CanSet() {
 					continue
 				}
 
-				setWithProperType(typeField, inputValue, structField, inputFieldName, errors)
+				inputValue, exists := req.Form[inputFieldName]
+				if !exists {
+					continue
+				}
+
+				numElems := len(inputValue)
+				if structField.Kind() == reflect.Slice && numElems > 0 {
+					sliceOf := structField.Type().Elem().Kind()
+					slice := reflect.MakeSlice(structField.Type(), numElems, numElems)
+					for i := 0; i < numElems; i++ {
+						setWithProperType(sliceOf, inputValue[i], slice.Index(i), inputFieldName, errors)
+					}
+					formStruct.Elem().Field(i).Set(slice)
+				} else {
+					setWithProperType(typeField.Type.Kind(), inputValue[0], structField, inputFieldName, errors)
+				}
 			}
 		}
 
@@ -174,8 +187,8 @@ func ErrorHandler(errs Errors, resp http.ResponseWriter) {
 // matching value from the request (via Form middleware) in the
 // same type, so that not all deserialized values have to be strings.
 // Supported types are string, int, float, and bool.
-func setWithProperType(typeField reflect.StructField, val string, structField reflect.Value, nameInTag string, errors *Errors) {
-	switch typeField.Type.Kind() {
+func setWithProperType(valueKind reflect.Kind, val string, structField reflect.Value, nameInTag string, errors *Errors) {
+	switch valueKind {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if val == "" {
 			val = "0"
