@@ -1,0 +1,101 @@
+package cors
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"github.com/codegangsta/martini"
+)
+
+func Test_AllowAll(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	m := martini.New()
+	m.Use(Allow(&Opts{
+		AllowAllOrigins: true,
+	}))
+
+	r, _ := http.NewRequest("PUT", "foo", nil)
+	m.ServeHTTP(recorder, r)
+
+	if recorder.HeaderMap.Get(headerAllowOrigin) != "*" {
+		t.Errorf("Allow-Origin header should be *")
+	}
+}
+
+func Test_AllowRegexMatch(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	m := martini.New()
+	m.Use(Allow(&Opts{
+		AllowOrigins: []string{"https://aaa.com", "https://foo\\.*"},
+	}))
+
+	origin := "https://foo.com"
+	r, _ := http.NewRequest("PUT", "foo", nil)
+	r.Header.Add("Origin", origin)
+	m.ServeHTTP(recorder, r)
+
+	headerValue := recorder.HeaderMap.Get(headerAllowOrigin)
+	if headerValue != origin {
+		t.Errorf("Allow-Origin header should be %v, found %v", origin, headerValue)
+	}
+}
+
+func Test_AllowRegexNoMatch(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	m := martini.New()
+	m.Use(Allow(&Opts{
+		AllowOrigins: []string{"https://foo\\.*"},
+	}))
+
+	origin := "https://bar.com"
+	r, _ := http.NewRequest("PUT", "foo", nil)
+	r.Header.Add("Origin", origin)
+	m.ServeHTTP(recorder, r)
+
+	headerValue := recorder.HeaderMap.Get(headerAllowOrigin)
+	if headerValue != "" {
+		t.Errorf("Allow-Origin header should not exist, found %v", headerValue)
+	}
+}
+
+func Test_OtherHeaders(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	m := martini.New()
+	m.Use(Allow(&Opts{
+		AllowAllOrigins:  true,
+		AllowCredentials: true,
+		AllowMethods:     []string{"PATCH", "GET"},
+		AllowHeaders:     []string{"Origin", "X-whatever"},
+		MaxAge:           5 * time.Minute,
+	}))
+
+	r, _ := http.NewRequest("PUT", "foo", nil)
+	m.ServeHTTP(recorder, r)
+
+	credentialsVal := recorder.HeaderMap.Get(headerAllowCredentials)
+	methodsVal := recorder.HeaderMap.Get(headerAllowMethods)
+	headersVal := recorder.HeaderMap.Get(headerAllowHeaders)
+	maxAgeVal := recorder.HeaderMap.Get(headerMaxAge)
+
+	if credentialsVal != "true" {
+		t.Errorf("Allow-Credentials is expected to be true, found %v", credentialsVal)
+	}
+
+	if methodsVal != "PATCH,GET" {
+		t.Errorf("Allow-Methods is expected to be PATCH,GET; found %v", methodsVal)
+	}
+
+	if headersVal != "Origin,X-whatever" {
+		t.Errorf("Allow-Headers is expected to be Origin,X-whatever; found %v", headersVal)
+	}
+
+	if maxAgeVal != "300" {
+		t.Errorf("Max-Age is expected to be 300, found %v", maxAgeVal)
+	}
+}
+
+func Test_Preflight(t *testing.T) {
+	// panic("not implemented")
+}
