@@ -97,5 +97,27 @@ func Test_OtherHeaders(t *testing.T) {
 }
 
 func Test_Preflight(t *testing.T) {
-	// panic("not implemented")
+	recorder := httptest.NewRecorder()
+	m := martini.New()
+	m.Use(Allow(&Opts{
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"PUT", "PATCH"},
+		AllowHeaders:    []string{"Origin", "X-whatever"},
+	}))
+
+	r, _ := http.NewRequest("OPTIONS", "foo", nil)
+	r.Header.Add(headerRequestMethod, "PUT")
+	r.Header.Add(headerRequestHeaders, "X-whatever")
+	m.ServeHTTP(recorder, r)
+
+	methodsVal := recorder.HeaderMap.Get(headerAllowMethods)
+	headersVal := recorder.HeaderMap.Get(headerAllowHeaders)
+
+	if methodsVal != "PUT,PATCH" {
+		t.Errorf("Allow-Methods is expected to be PUT,PATCH, found %v", methodsVal)
+	}
+
+	if headersVal != "X-whatever" {
+		t.Errorf("Allow-Headers is expected to be X-whatever, found %v", headersVal)
+	}
 }
