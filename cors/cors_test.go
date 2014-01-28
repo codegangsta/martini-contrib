@@ -121,3 +121,32 @@ func Test_Preflight(t *testing.T) {
 		t.Errorf("Allow-Headers is expected to be X-whatever, found %v", headersVal)
 	}
 }
+
+func Benchmark_WithoutCORS(b *testing.B) {
+	recorder := httptest.NewRecorder()
+	m := martini.New()
+
+	b.ResetTimer()
+	for i := 0; i < 100; i++ {
+		r, _ := http.NewRequest("PUT", "foo", nil)
+		m.ServeHTTP(recorder, r)
+	}
+}
+
+func Benchmark_WithCORS(b *testing.B) {
+	recorder := httptest.NewRecorder()
+	m := martini.New()
+	m.Use(Allow(&Opts{
+		AllowAllOrigins:  true,
+		AllowCredentials: true,
+		AllowMethods:     []string{"PATCH", "GET"},
+		AllowHeaders:     []string{"Origin", "X-whatever"},
+		MaxAge:           5 * time.Minute,
+	}))
+
+	b.ResetTimer()
+	for i := 0; i < 100; i++ {
+		r, _ := http.NewRequest("PUT", "foo", nil)
+		m.ServeHTTP(recorder, r)
+	}
+}
