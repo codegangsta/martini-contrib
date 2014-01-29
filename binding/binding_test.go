@@ -91,6 +91,7 @@ func handle(test testCase, t *testing.T, index int, post BlogPost, errors Errors
 	assertEqualField(t, "Title", index, test.ref.Title, post.Title)
 	assertEqualField(t, "Content", index, test.ref.Content, post.Content)
 	assertEqualField(t, "Views", index, test.ref.Views, post.Views)
+	assertEqualField(t, "Id", index, test.ref.Id, post.Id)
 
 	for i := range test.ref.Multiple {
 		if i >= len(post.Multiple) {
@@ -128,8 +129,8 @@ func TestValidate(t *testing.T) {
 		}
 	}
 
-	performValidationTest(&BlogPost{"", "...", 0, 0, []int{}}, handlerMustErr, t)
-	performValidationTest(&BlogPost{"Good Title", "Good content", 0, 0, []int{}}, handlerNoErr, t)
+	performValidationTest(&BlogPost{"", "...", 0, 0, []int{}, ""}, handlerMustErr, t)
+	performValidationTest(&BlogPost{"Good Title", "Good content", 0, 0, []int{}, ""}, handlerNoErr, t)
 
 	performValidationTest(&User{Name: "Jim", Home: Address{"", ""}}, handlerMustErr, t)
 	performValidationTest(&User{Name: "Jim", Home: Address{"required", ""}}, handlerNoErr, t)
@@ -176,6 +177,7 @@ type (
 		Views    int    `form:"views" json:"views"`
 		internal int    `form:"-"`
 		Multiple []int  `form:"multiple"`
+		Id       string `json:"id" binding:"-"`
 	}
 
 	User struct {
@@ -352,10 +354,10 @@ var (
 		{
 			"POST",
 			"",
-			`{"content":"This is the content", "title":"Blog Post Title"}`,
+			`{"content":"This is the content", "title":"Blog Post Title", "id": "1"}`,
 			"",
 			true,
-			&BlogPost{Title: "Blog Post Title", Content: "This is the content"},
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Id: ""},
 		},
 		{
 			"PUT",

@@ -62,10 +62,11 @@ import (
  )
 
 type BlogPost struct {
-	Title   string    `form:"title" json:"title" binding:"required"`
-	Content string    `form:"content" json:"content"`
-	Views   int       `form:"views" json:"views"`
-	unexported string `form:"-"`  // skip binding of unexported fields
+	Title      string `form:"title" json:"title" binding:"required"`
+	Content    string `form:"content" json:"content"`
+	Views      int    `form:"views" json:"views"`
+	unexported string `binding:"-"`           // skip binding of unexported fields
+	Id         string `json:"id" binding:"-"` // exported, but won't be binded and overwritten.
 }
 
 // This method implements binding.Validator and is executed by the binding.Validate middleware

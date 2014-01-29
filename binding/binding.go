@@ -4,6 +4,7 @@ package binding
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -103,6 +104,8 @@ func Form(formStruct interface{}) martini.Handler {
 // validated, but no error handling is actually performed here.
 func Json(jsonStruct interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
+		var payload map[string]interface{}
+
 		ensureNotPointer(jsonStruct)
 		jsonStruct := reflect.New(reflect.TypeOf(jsonStruct))
 		errors := newErrors()
@@ -111,12 +114,73 @@ func Json(jsonStruct interface{}) martini.Handler {
 			defer req.Body.Close()
 		}
 
-		if err := json.NewDecoder(req.Body).Decode(jsonStruct.Interface()); err != nil {
+		content, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			errors.Overall[DeserializationError] = err.Error()
+		} else if err = json.Unmarshal(content, &payload); err != nil {
 			errors.Overall[DeserializationError] = err.Error()
 		}
 
+		typ := jsonStruct.Elem().Type()
+
+		fillStruct(payload, typ, jsonStruct.Elem(), errors)
+
 		validateAndMap(jsonStruct, context, errors)
 	}
+}
+
+func jsonVal(name string, i interface{}) (interface{}, bool) {
+	if _, ok := i.(map[string]interface{}); !ok {
+		return nil, false
+	}
+
+	if v, ok := i.(map[string]interface{})[name]; !ok || v == nil {
+		return nil, false
+	} else {
+		return v, true
+	}
+}
+
+func fillStruct(src interface{}, typ reflect.Type, dst reflect.Value, errors *Errors) {
+	for i := 0; i < typ.NumField(); i++ {
+		var jsonTags []string
+
+		typeField := typ.Field(i)
+		if typeField.Tag.Get("binding") == "-" {
+			continue
+		}
+
+		structField := dst.Field(i)
+		if !structField.CanSet() {
+			continue
+		}
+
+		if jsonTags = strings.Split(typeField.Tag.Get("json"), ","); jsonTags[0] == "" {
+			continue
+		}
+
+		if typeField.Type.Kind() == reflect.Struct {
+			fillStruct(src.(map[string]interface{})[jsonTags[0]], typeField.Type, structField, errors)
+			continue
+		}
+
+		var sv reflect.Value
+
+		value, found := jsonVal(jsonTags[0], src)
+		if !found {
+			sv = reflect.Zero(typeField.Type)
+			continue
+		}
+
+		switch typeField.Type {
+		default:
+			sv = reflect.ValueOf(value)
+			break
+		}
+
+		structField.Set(sv)
+	}
+
 }
 
 // Validate is middleware to enforce required fields. If the struct
@@ -149,7 +213,7 @@ func validateStruct(errors *Errors, obj interface{}) {
 		field := typ.Field(i)
 
 		// Allow ignored fields in the struct
-		if field.Tag.Get("form") == "-" {
+		if field.Tag.Get("form") == "-" || field.Tag.Get("binding") == "-" {
 			continue
 		}
 
