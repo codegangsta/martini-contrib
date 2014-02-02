@@ -12,6 +12,21 @@ import (
 	"net/http"
 )
 
+// These are the default configuration values for this package. They
+// can be set at anytime, probably during the initial setup of Martini.
+var (
+	// RedirectUrl should be the relative URL for your login route
+	RedirectUrl string = "/login"
+
+	// RedirectParam is the query string parameter that will be set
+	// with the page the user was trying to visit before they were
+	// intercepted.
+	RedirectParam string = "next"
+
+	// SessionKey is the key containing the unique ID in your session
+	SessionKey string = "AUTHUNIQUEID"
+)
+
 // User defines all the functions necessary to work with the user's authentication.
 // The caller should implement these functions for whatever system of authentication
 // they choose to use
@@ -40,7 +55,7 @@ type User interface {
 // user type.
 func SessionUser(newUser func() User) martini.Handler {
 	return func(s sessions.Session, c martini.Context, l *log.Logger) {
-		userId := s.Get("AUTHUNIQUEID")
+		userId := s.Get(SessionKey)
 		user := newUser()
 
 		if userId != nil {
@@ -67,7 +82,7 @@ func AuthenticateSession(s sessions.Session, user User) error {
 // Logout will clear out the session and call the Logout() user function.
 func Logout(s sessions.Session, user User) {
 	user.Logout()
-	s.Delete("AUTHUNIQUEID")
+	s.Delete(SessionKey)
 }
 
 // LoginRequired verifies that the current user is authenticated. Any routes that
@@ -76,7 +91,7 @@ func Logout(s sessions.Session, user User) {
 // set to the attempted URL.
 func LoginRequired(r render.Render, user User, req *http.Request) {
 	if user.IsAuthenticated() == false {
-		path := fmt.Sprintf("/login?next=%s", req.URL.Path)
+		path := fmt.Sprintf("/%s?%s=%s", RedirectUrl, RedirectParam, req.URL.Path)
 		r.Redirect(path, 302)
 	}
 }
@@ -84,6 +99,6 @@ func LoginRequired(r render.Render, user User, req *http.Request) {
 // UpdateUser updates the User object stored in the session. This is useful incase a change
 // is made to the user model that needs to persist across requests.
 func UpdateUser(s sessions.Session, user User) error {
-	s.Set("AUTHUNIQUEID", user.UniqueId())
+	s.Set(SessionKey, user.UniqueId())
 	return nil
 }
