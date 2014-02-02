@@ -39,6 +39,38 @@ func TestBind(t *testing.T) {
 	}
 }
 
+func TestBindWithInterface(t *testing.T) {
+	index := 0
+	for test, expectStatus := range bindTests {
+		recorder := httptest.NewRecorder()
+		handler := func(post Modeler, errors Errors) {
+			post.Create(test, t, index)
+		}
+
+		m := martini.Classic()
+		switch test.method {
+		case "GET":
+			m.Get(route, Bind(BlogPost{}, (*Modeler)(nil)), handler)
+		case "POST":
+			m.Post(route, Bind(BlogPost{}, (*Modeler)(nil)), handler)
+		}
+
+		req, err := http.NewRequest(test.method, test.path, strings.NewReader(test.payload))
+		req.Header.Add("Content-Type", test.contentType)
+
+		if err != nil {
+			t.Error(err)
+		}
+		m.ServeHTTP(recorder, req)
+
+		if recorder.Code != expectStatus {
+			t.Errorf("On test case %v, got status code %d but expected %d", test, recorder.Code, expectStatus)
+		}
+
+		index++
+	}
+}
+
 func TestForm(t *testing.T) {
 	for index, test := range formTests {
 		recorder := httptest.NewRecorder()
@@ -52,6 +84,30 @@ func TestForm(t *testing.T) {
 			m.Get(route, Form(BlogPost{}), handler)
 		case "POST":
 			m.Post(route, Form(BlogPost{}), handler)
+		}
+
+		req, err := http.NewRequest(test.method, test.path, nil)
+		if err != nil {
+			t.Error(err)
+		}
+		m.ServeHTTP(recorder, req)
+	}
+}
+
+
+func TestFormWithInterface(t *testing.T) {
+	for index, test := range formTests {
+		recorder := httptest.NewRecorder()
+		handler := func(post Modeler, errors Errors) {
+			post.Create(test, t, index)
+		}
+
+		m := martini.Classic()
+		switch test.method {
+		case "GET":
+			m.Get(route, Form(BlogPost{}, (*Modeler)(nil)), handler)
+		case "POST":
+			m.Post(route, Form(BlogPost{}, (*Modeler)(nil)), handler)
 		}
 
 		req, err := http.NewRequest(test.method, test.path, nil)
@@ -77,6 +133,33 @@ func TestJson(t *testing.T) {
 			m.Put(route, Json(BlogPost{}), handler)
 		case "DELETE":
 			m.Delete(route, Json(BlogPost{}), handler)
+		}
+
+		req, err := http.NewRequest(test.method, route, strings.NewReader(test.payload))
+		if err != nil {
+			t.Error(err)
+		}
+		m.ServeHTTP(recorder, req)
+	}
+}
+
+func TestJsonWithInterface(t *testing.T) {
+	for index, test := range jsonTests {
+		recorder := httptest.NewRecorder()
+		handler := func(post Modeler, errors Errors) {
+			post.Create(test, t, index)
+		}
+
+		m := martini.Classic()
+		switch test.method {
+		case "GET":
+			m.Get(route, Json(BlogPost{}, (*Modeler)(nil)), handler)
+		case "POST":
+			m.Post(route, Json(BlogPost{}, (*Modeler)(nil)), handler)
+		case "PUT":
+			m.Put(route, Json(BlogPost{}, (*Modeler)(nil)), handler)
+		case "DELETE":
+			m.Delete(route, Json(BlogPost{}, (*Modeler)(nil)), handler)
 		}
 
 		req, err := http.NewRequest(test.method, route, strings.NewReader(test.payload))
@@ -160,6 +243,27 @@ func (self BlogPost) Validate(errors *Errors, req *http.Request) {
 	}
 }
 
+func (self BlogPost) Create(test testCase, t *testing.T, index int) {
+	assertEqualField(t, "Title", index, test.ref.Title, self.Title)
+	assertEqualField(t, "Content", index, test.ref.Content, self.Content)
+	assertEqualField(t, "Views", index, test.ref.Views, self.Views)
+
+	for i := range test.ref.Multiple {
+		if i >= len(self.Multiple) {
+			t.Errorf("Expected: %v (size %d) to have same size as: %v (size %d)", self.Multiple, len(self.Multiple), test.ref.Multiple, len(test.ref.Multiple))
+			break
+		}
+		if test.ref.Multiple[i] != self.Multiple[i] {
+			t.Errorf("Expected: %v to deep equal: %v", self.Multiple, test.ref.Multiple)
+			break
+		}
+	}
+}
+
+func (self BlogSection) Create(test testCase, t *testing.T, index int) {
+	// intentionally left empty
+}
+
 type (
 	testCase struct {
 		method      string
@@ -169,6 +273,10 @@ type (
 		ok          bool
 		ref         *BlogPost
 	}
+	
+	Modeler interface {
+		Create(test testCase, t *testing.T, index int)
+	}
 
 	BlogPost struct {
 		Title    string `form:"title" json:"title" binding:"required"`
@@ -176,6 +284,11 @@ type (
 		Views    int    `form:"views" json:"views"`
 		internal int    `form:"-"`
 		Multiple []int  `form:"multiple"`
+	}
+	
+	BlogSection struct {
+		Title    string `form:"title" json:"title" binding:"required"`
+		Content  string `form:"content" json:"content"`
 	}
 
 	User struct {
@@ -269,7 +382,7 @@ var (
 			&BlogPost{Title: "Blog Post Title", Content: "This is the content"},
 		}: http.StatusOK,
 	}
-
+	
 	formTests = []testCase{
 		{
 			"GET",
