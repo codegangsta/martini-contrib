@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
 	"github.com/codegangsta/martini"
 )
 
@@ -34,6 +33,8 @@ func Bind(obj interface{}) martini.Handler {
 
 		if strings.Contains(contentType, "form-urlencoded") {
 			context.Invoke(Form(obj))
+		} else if strings.Contains(contentType, "multipart/form-data") {
+			context.Invoke(MultipartForm(obj))
 		} else if strings.Contains(contentType, "json") {
 			context.Invoke(Json(obj))
 		} else {
@@ -49,7 +50,7 @@ func Bind(obj interface{}) martini.Handler {
 
 // Form is middleware to deserialize form-urlencoded data from the request.
 // It gets data from the form-urlencoded body, if present, or from the
-// query string. It uses the http.Request.ParseMultipartForm() method
+// query string. It uses the http.Request.ParseForm() method
 // to perform deserialization, then reflection is used to map each field
 // into the struct with the proper type. Structs with primitive slice types
 // (bool, float, int, string) can support deserialization of repeated form
@@ -59,40 +60,45 @@ func Form(formStruct interface{}) martini.Handler {
 		ensureNotPointer(formStruct)
 		formStruct := reflect.New(reflect.TypeOf(formStruct))
 		errors := newErrors()
-		parseErr := req.ParseMultipartForm(MaxMemory)
+		parseErr := req.ParseForm()
 
+		// Format validation of the request body or the URL would add considerable overhead,
+		// and ParseForm does not complain when URL encoding is off.
+		// Because an empty request body or url can also mean absence of all needed values,
+		// it is not in all cases a bad request, so let's return 422.
 		if parseErr != nil {
 			errors.Overall[DeserializationError] = parseErr.Error()
 		}
 
-		typ := formStruct.Elem().Type()
+		mapForm(formStruct, req.Form, errors)
+		
+		validateAndMap(formStruct, context, errors)
+	}
+}
 
-		for i := 0; i < typ.NumField(); i++ {
-			typeField := typ.Field(i)
-			if inputFieldName := typeField.Tag.Get("form"); inputFieldName != "" {
-				structField := formStruct.Elem().Field(i)
-				if !structField.CanSet() {
-					continue
-				}
-
-				inputValue, exists := req.Form[inputFieldName]
-				if !exists {
-					continue
-				}
-
-				numElems := len(inputValue)
-				if structField.Kind() == reflect.Slice && numElems > 0 {
-					sliceOf := structField.Type().Elem().Kind()
-					slice := reflect.MakeSlice(structField.Type(), numElems, numElems)
-					for i := 0; i < numElems; i++ {
-						setWithProperType(sliceOf, inputValue[i], slice.Index(i), inputFieldName, errors)
-					}
-					formStruct.Elem().Field(i).Set(slice)
-				} else {
-					setWithProperType(typeField.Type.Kind(), inputValue[0], structField, inputFieldName, errors)
-				}
+func MultipartForm(formStruct interface{}) martini.Handler {
+	return func(context martini.Context, req *http.Request) {
+		ensureNotPointer(formStruct)
+		formStruct := reflect.New(reflect.TypeOf(formStruct))
+		errors := newErrors()
+		
+		// Workaround for multipart forms returning nil instead of an error
+		// when content is not multipart
+		// https://code.google.com/p/go/issues/detail?id=6334
+		multipartReader, err := req.MultipartReader()
+		if err != nil {
+			errors.Overall[DeserializationError] = err.Error()
+		} else {
+			form, parseErr := multipartReader.ReadForm(MaxMemory)
+				
+			if parseErr != nil {
+				errors.Overall[DeserializationError] = parseErr.Error()
 			}
+						
+			req.MultipartForm = form
 		}
+
+		mapForm(formStruct, req.MultipartForm.Value, errors)
 
 		validateAndMap(formStruct, context, errors)
 	}
@@ -166,6 +172,38 @@ func validateStruct(errors *Errors, obj interface{}) {
 	}
 }
 
+func mapForm(formStruct reflect.Value, form map[string][]string, errors *Errors) {
+	typ := formStruct.Elem().Type()
+
+	for i := 0; i < typ.NumField(); i++ {
+		typeField := typ.Field(i)
+		if inputFieldName := typeField.Tag.Get("form"); inputFieldName != "" {
+			structField := formStruct.Elem().Field(i)
+			if !structField.CanSet() {
+				continue
+			}
+
+			inputValue, exists := form[inputFieldName]
+			
+			if !exists {
+				continue
+			}
+
+			numElems := len(inputValue)
+			if structField.Kind() == reflect.Slice && numElems > 0 {
+				sliceOf := structField.Type().Elem().Kind()
+				slice := reflect.MakeSlice(structField.Type(), numElems, numElems)
+				for i := 0; i < numElems; i++ {
+					setWithProperType(sliceOf, inputValue[i], slice.Index(i), inputFieldName, errors)
+				}
+				formStruct.Elem().Field(i).Set(slice)
+			} else {
+				setWithProperType(typeField.Type.Kind(), inputValue[0], structField, inputFieldName, errors)
+			}
+		}
+	}
+}
+
 // ErrorHandler simply counts the number of errors in the
 // context and, if more than 0, writes a 400 Bad Request
 // response and a JSON payload describing the errors with
@@ -178,7 +216,11 @@ func validateStruct(errors *Errors, obj interface{}) {
 func ErrorHandler(errs Errors, resp http.ResponseWriter) {
 	if errs.Count() > 0 {
 		resp.Header().Set("Content-Type", "application/json; charset=utf-8")
-		resp.WriteHeader(http.StatusBadRequest)
+		if _, ok := errs.Overall[DeserializationError]; ok {
+			resp.WriteHeader(http.StatusBadRequest)
+		} else {
+			resp.WriteHeader(422)
+		}
 		errOutput, _ := json.Marshal(errs)
 		resp.Write(errOutput)
 		return
@@ -305,6 +347,7 @@ var (
 )
 
 const (
+	FormEncodingError    string = "FormEncodingError"
 	RequireError         string = "Required"
 	DeserializationError string = "DeserializationError"
 	IntegerTypeError     string = "IntegerTypeError"
