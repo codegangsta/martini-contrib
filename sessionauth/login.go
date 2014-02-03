@@ -91,7 +91,7 @@ func Logout(s sessions.Session, user User) {
 // set to the attempted URL.
 func LoginRequired(r render.Render, user User, req *http.Request) {
 	if user.IsAuthenticated() == false {
-		path := fmt.Sprintf("/%s?%s=%s", RedirectUrl, RedirectParam, req.URL.Path)
+		path := fmt.Sprintf("%s?%s=%s", RedirectUrl, RedirectParam, req.URL.Path)
 		r.Redirect(path, 302)
 	}
 }
