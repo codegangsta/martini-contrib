@@ -66,36 +66,43 @@ func Form(formStruct interface{}) martini.Handler {
 		}
 
 		typ := formStruct.Elem().Type()
-
-		for i := 0; i < typ.NumField(); i++ {
-			typeField := typ.Field(i)
-			if inputFieldName := typeField.Tag.Get("form"); inputFieldName != "" {
-				structField := formStruct.Elem().Field(i)
-				if !structField.CanSet() {
-					continue
-				}
-
-				inputValue, exists := req.Form[inputFieldName]
-				if !exists {
-					continue
-				}
-
-				numElems := len(inputValue)
-				if structField.Kind() == reflect.Slice && numElems > 0 {
-					sliceOf := structField.Type().Elem().Kind()
-					slice := reflect.MakeSlice(structField.Type(), numElems, numElems)
-					for i := 0; i < numElems; i++ {
-						setWithProperType(sliceOf, inputValue[i], slice.Index(i), inputFieldName, errors)
-					}
-					formStruct.Elem().Field(i).Set(slice)
-				} else {
-					setWithProperType(typeField.Type.Kind(), inputValue[0], structField, inputFieldName, errors)
-				}
-			}
-		}
+		populateFormStruct(formStruct.Elem(), typ, req, errors)
 
 		validateAndMap(formStruct, context, errors)
 	}
+}
+
+func populateFormStruct(formStruct reflect.Value, typ reflect.Type, req *http.Request, errors *Errors) {
+
+	for i := 0; i < typ.NumField(); i++ {
+		typeField := typ.Field(i)
+		if typeField.Type.Kind() == reflect.Struct {
+			populateFormStruct(formStruct.Field(i), typeField.Type, req, errors)
+		} else if inputFieldName := typeField.Tag.Get("form"); inputFieldName != "" {
+			structField := formStruct.Field(i)
+			if !structField.CanSet() {
+				continue
+			}
+
+			inputValue, exists := req.Form[inputFieldName]
+			if !exists {
+				continue
+			}
+
+			numElems := len(inputValue)
+			if structField.Kind() == reflect.Slice && numElems > 0 {
+				sliceOf := structField.Type().Elem().Kind()
+				slice := reflect.MakeSlice(structField.Type(), numElems, numElems)
+				for i := 0; i < numElems; i++ {
+					setWithProperType(sliceOf, inputValue[i], slice.Index(i), inputFieldName, errors)
+				}
+				formStruct.Field(i).Set(slice)
+			} else {
+				setWithProperType(typeField.Type.Kind(), inputValue[0], structField, inputFieldName, errors)
+			}
+		}
+	}
+
 }
 
 // Json is middleware to deserialize a JSON payload from the request
