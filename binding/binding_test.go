@@ -295,6 +295,14 @@ var (
 			true,
 			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Views: 3, Multiple: []int{5, 10, 15, 20}},
 		},
+		{
+			"GET",
+			path + "?content=This is the content&title=Blog+Post+Title&views=3&multiple=5&multiple=10&multiple=15&multiple=20",
+			"",
+			"",
+			true,
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Views: 3, Multiple: []int{5, 10, 15, 20}},
+		},
 	}
 
 	jsonTests = []testCase{
