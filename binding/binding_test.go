@@ -4,7 +4,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"strconv"
 	"testing"
+	"mime/multipart"
+	"bytes"
 
 	"github.com/codegangsta/martini"
 )
@@ -22,7 +25,7 @@ func TestBind(t *testing.T) {
 		case "POST":
 			m.Post(route, Bind(BlogPost{}), handler)
 		}
-
+		
 		req, err := http.NewRequest(test.method, test.path, strings.NewReader(test.payload))
 		req.Header.Add("Content-Type", test.contentType)
 
@@ -35,6 +38,19 @@ func TestBind(t *testing.T) {
 			t.Errorf("On test case %v, got status code %d but expected %d", test, recorder.Code, expectStatus)
 		}
 
+		index++
+	}
+}
+
+func TestMultipartBind(t *testing.T) {
+	index := 0
+	for test, expectStatus := range bindMultipartTests {
+		recorder := testMultipart(test, Bind(BlogPost{}), t, index)
+		
+		if recorder.Code != expectStatus {
+			t.Errorf("On test case %v, got status code %d but expected %d", test, recorder.Code, expectStatus)
+		}
+		
 		index++
 	}
 }
@@ -59,6 +75,12 @@ func TestForm(t *testing.T) {
 			t.Error(err)
 		}
 		m.ServeHTTP(recorder, req)
+	}
+}
+
+func TestMultipartForm(t *testing.T) {
+	for index, test := range multipartformTests {
+		testMultipart(test, MultipartForm(BlogPost{}), t, index)
 	}
 }
 
@@ -88,6 +110,66 @@ func TestJson(t *testing.T) {
 }
 
 func handle(test testCase, t *testing.T, index int, post BlogPost, errors Errors) {
+	assertEqualField(t, "Title", index, test.ref.Title, post.Title)
+	assertEqualField(t, "Content", index, test.ref.Content, post.Content)
+	assertEqualField(t, "Views", index, test.ref.Views, post.Views)
+
+	for i := range test.ref.Multiple {
+		if i >= len(post.Multiple) {
+			t.Errorf("Expected: %v (size %d) to have same size as: %v (size %d)", post.Multiple, len(post.Multiple), test.ref.Multiple, len(test.ref.Multiple))
+			break
+		}
+		if test.ref.Multiple[i] != post.Multiple[i] {
+			t.Errorf("Expected: %v to deep equal: %v", post.Multiple, test.ref.Multiple)
+			break
+		}
+	}
+
+	if test.ok && errors.Count() > 0 {
+		t.Errorf("%+v should be OK (0 errors), but had errors: %+v", test, errors)
+	} else if !test.ok && errors.Count() == 0 {
+		t.Errorf("%+v should have errors, but was OK (0 errors): %+v", test)
+	}
+}
+
+func testMultipart(test multipartTestCase, middleware martini.Handler, t *testing.T, index int) *httptest.ResponseRecorder {
+	recorder := httptest.NewRecorder()
+	handler := func(post BlogPost, errors Errors) {
+		handleMultipart(test, t, index, post, errors)
+	}
+
+	m := martini.Classic()
+	m.Post(route, middleware, handler)
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	writer.WriteField("title", test.payload.Title)
+	writer.WriteField("content", test.payload.Content)
+	writer.WriteField("views", strconv.Itoa(test.payload.Views))
+	if len(test.payload.Multiple) != 0 {
+		for _, value := range test.payload.Multiple {
+			writer.WriteField("multiple", strconv.Itoa(value))
+		}
+	}
+	
+	req, err := http.NewRequest(test.method, test.path, body)
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+	
+	if err != nil {
+		t.Error(err)
+	}
+	
+	err = writer.Close()
+	if err != nil {
+		t.Error(err)
+	}
+	
+	m.ServeHTTP(recorder, req)
+	
+	return recorder
+}
+
+func handleMultipart(test multipartTestCase, t *testing.T, index int, post BlogPost, errors Errors) {
 	assertEqualField(t, "Title", index, test.ref.Title, post.Title)
 	assertEqualField(t, "Content", index, test.ref.Content, post.Content)
 	assertEqualField(t, "Views", index, test.ref.Views, post.Views)
@@ -148,6 +230,7 @@ func performValidationTest(data interface{}, handler func(Errors), t *testing.T)
 	m.ServeHTTP(recorder, req)
 }
 
+
 func (self BlogPost) Validate(errors *Errors, req *http.Request) {
 	if len(self.Title) < 4 {
 		errors.Fields["Title"] = "Too short; minimum 4 characters"
@@ -165,6 +248,15 @@ type (
 		method      string
 		path        string
 		payload     string
+		contentType string
+		ok          bool
+		ref         *BlogPost
+	}
+	
+	multipartTestCase struct {
+		method      string
+		path        string
+		payload     *BlogPost
 		contentType string
 		ok          bool
 		ref         *BlogPost
@@ -203,8 +295,8 @@ var (
 		testCase{
 			"POST",
 			path,
-			`not URL-encoded but has content-type`,
-			"x-www-form-urlencoded",
+			`not multipart but has content-type`,
+			"multipart/form-data",
 			false,
 			new(BlogPost),
 		}: http.StatusBadRequest,
@@ -219,13 +311,21 @@ var (
 
 		// These should deserialize, then bail at the validation phase
 		testCase{
+			"POST",
+			path + "?title= This is wrong  ",
+			`not URL-encoded but has content-type`,
+			"x-www-form-urlencoded",
+			false,
+			new(BlogPost),
+		}: 422, // according to comments in Form() -> although the request is not url encoded, ParseForm does not complain
+		testCase{
 			"GET",
 			path + "?content=This+is+the+content",
 			``,
 			"x-www-form-urlencoded",
 			false,
 			&BlogPost{Title: "", Content: "This is the content"},
-		}: http.StatusBadRequest,
+		}: 422,
 		testCase{
 			"GET",
 			path + "",
@@ -233,7 +333,7 @@ var (
 			"application/json",
 			false,
 			&BlogPost{Title: "Blog Post Title", Content: ""},
-		}: http.StatusBadRequest,
+		}: 422,
 
 		// These should succeed
 		testCase{
@@ -246,7 +346,7 @@ var (
 		}: http.StatusOK,
 		testCase{
 			"GET",
-			path + "?content=This is the content&title=Blog+Post+Title",
+			path + "?content=This+is+the+content&title=Blog+Post+Title",
 			``,
 			"",
 			true,
@@ -269,6 +369,27 @@ var (
 			&BlogPost{Title: "Blog Post Title", Content: "This is the content"},
 		}: http.StatusOK,
 	}
+	
+	bindMultipartTests = map[multipartTestCase]int{
+		// This should deserialize, then bail at the validation phase
+		multipartTestCase{
+			"POST",
+			path,
+			&BlogPost{Title: "", Content: "This is the content"},
+			"multipart/form-data",
+			false,
+			&BlogPost{Title: "", Content: "This is the content"},
+		}: 422,
+		// This should succeed
+		multipartTestCase{
+			"POST",
+			path,
+			&BlogPost{Title: "This is the Title", Content: "This is the content"},
+			"multipart/form-data",
+			true,
+			&BlogPost{Title: "This is the Title", Content: "This is the content"},
+		}: http.StatusOK,
+	}
 
 	formTests = []testCase{
 		{
@@ -281,7 +402,7 @@ var (
 		},
 		{
 			"POST",
-			path + "?content=This is the content&title=Blog+Post+Title&views=3",
+			path + "?content=This+is+the+content&title=Blog+Post+Title&views=3",
 			"",
 			"",
 			false, // false because POST requests should have a body, not just a query string
@@ -289,8 +410,35 @@ var (
 		},
 		{
 			"GET",
-			path + "?content=This is the content&title=Blog+Post+Title&views=3&multiple=5&multiple=10&multiple=15&multiple=20",
+			path + "?content=This+is+the+content&title=Blog+Post+Title&views=3&multiple=5&multiple=10&multiple=15&multiple=20",
 			"",
+			"",
+			true,
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Views: 3, Multiple: []int{5, 10, 15, 20}},
+		},
+	}
+	
+	multipartformTests = []multipartTestCase{
+		{
+			"POST",
+			path,
+			&BlogPost{Title: "", Content: "This is the content"},
+			"",
+			false,
+			&BlogPost{Title: "", Content: "This is the content"},
+		},
+		{
+			"POST",
+			path,
+			&BlogPost{Title: "Blog Post Title", Views: 3},
+			"",
+			false,
+			&BlogPost{Title: "Blog Post Title", Views: 3},
+		},
+		{
+			"POST",
+			path,
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Views: 3, Multiple: []int{5, 10, 15, 20}},
 			"",
 			true,
 			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Views: 3, Multiple: []int{5, 10, 15, 20}},
