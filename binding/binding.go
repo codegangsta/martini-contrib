@@ -292,10 +292,17 @@ func (this *Errors) combine(other Errors) {
 }
 
 func destructArguments(arguments []interface{}) (interface{}, interface{}) {
-	arg1, arg2 := arguments[0], (interface{})(nil)
-	if len(arguments) - 1 == 1  {
-		arg2 = arguments[1]
+	arg1, arg2 := (interface{})(nil), (interface{})(nil)
+	
+	switch len(arguments) {
+	case 2:
+		arg1, arg2 = arguments[0], arguments[1]
+	case 1:
+		arg1 = arguments[0]
+	default:
+		panic("Binding expects 1 or 2 arguments, but got " + strconv.Itoa(len(arguments)))
 	}
+	
 	return arg1, arg2
 }
 
