@@ -4,171 +4,93 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"strconv"
 	"testing"
+	"mime/multipart"
+	"bytes"
 
 	"github.com/codegangsta/martini"
 )
 
 func TestBind(t *testing.T) {
-	index := 0
-	for test, expectStatus := range bindTests {
-		recorder := httptest.NewRecorder()
-		handler := func(post BlogPost, errors Errors) { handle(test, t, index, post, errors) }
-
-		m := martini.Classic()
-		switch test.method {
-		case "GET":
-			m.Get(route, Bind(BlogPost{}), handler)
-		case "POST":
-			m.Post(route, Bind(BlogPost{}), handler)
-		}
-
-		req, err := http.NewRequest(test.method, test.path, strings.NewReader(test.payload))
-		req.Header.Add("Content-Type", test.contentType)
-
-		if err != nil {
-			t.Error(err)
-		}
-		m.ServeHTTP(recorder, req)
-
-		if recorder.Code != expectStatus {
-			t.Errorf("On test case %v, got status code %d but expected %d", test, recorder.Code, expectStatus)
-		}
-
-		index++
-	}
+	testBind(t, false)
 }
 
 func TestBindWithInterface(t *testing.T) {
+	testBind(t, true)
+}
+
+func TestMultipartBind(t *testing.T) {
 	index := 0
-	for test, expectStatus := range bindTests {
-		recorder := httptest.NewRecorder()
-		handler := func(post Modeler, errors Errors) {
-			post.Create(test, t, index)
+	for test, expectStatus := range bindMultipartTests {
+		handler := func(post BlogPost, errors Errors) {
+			handle(test, t, index, post, errors)
 		}
-
-		m := martini.Classic()
-		switch test.method {
-		case "GET":
-			m.Get(route, Bind(BlogPost{}, (*Modeler)(nil)), handler)
-		case "POST":
-			m.Post(route, Bind(BlogPost{}, (*Modeler)(nil)), handler)
-		}
-
-		req, err := http.NewRequest(test.method, test.path, strings.NewReader(test.payload))
-		req.Header.Add("Content-Type", test.contentType)
-
-		if err != nil {
-			t.Error(err)
-		}
-		m.ServeHTTP(recorder, req)
-
+		recorder := testMultipart(t, test, Bind(BlogPost{}), handler, index)
+		
 		if recorder.Code != expectStatus {
 			t.Errorf("On test case %v, got status code %d but expected %d", test, recorder.Code, expectStatus)
 		}
-
+		
 		index++
 	}
 }
 
 func TestForm(t *testing.T) {
-	for index, test := range formTests {
-		recorder := httptest.NewRecorder()
+	testForm(t, false)
+}
+
+func TestFormWithInterface(t *testing.T) {
+	testForm(t, true)
+}
+
+func TestMultipartForm(t *testing.T) {
+	for index, test := range multipartformTests {
 		handler := func(post BlogPost, errors Errors) {
 			handle(test, t, index, post, errors)
 		}
-
-		m := martini.Classic()
-		switch test.method {
-		case "GET":
-			m.Get(route, Form(BlogPost{}), handler)
-		case "POST":
-			m.Post(route, Form(BlogPost{}), handler)
-		}
-
-		req, err := http.NewRequest(test.method, test.path, nil)
-		if err != nil {
-			t.Error(err)
-		}
-		m.ServeHTTP(recorder, req)
+		testMultipart(t, test, MultipartForm(BlogPost{}), handler, index)
 	}
 }
 
-
-func TestFormWithInterface(t *testing.T) {
-	for index, test := range formTests {
-		recorder := httptest.NewRecorder()
+func TestMultipartFormWithInterface(t *testing.T) {
+	for index, test := range multipartformTests {
 		handler := func(post Modeler, errors Errors) {
 			post.Create(test, t, index)
 		}
-
-		m := martini.Classic()
-		switch test.method {
-		case "GET":
-			m.Get(route, Form(BlogPost{}, (*Modeler)(nil)), handler)
-		case "POST":
-			m.Post(route, Form(BlogPost{}, (*Modeler)(nil)), handler)
-		}
-
-		req, err := http.NewRequest(test.method, test.path, nil)
-		if err != nil {
-			t.Error(err)
-		}
-		m.ServeHTTP(recorder, req)
+		testMultipart(t, test, MultipartForm(BlogPost{}, (*Modeler)(nil)), handler, index)
 	}
 }
 
 func TestJson(t *testing.T) {
-	for index, test := range jsonTests {
-		recorder := httptest.NewRecorder()
-		handler := func(post BlogPost, errors Errors) { handle(test, t, index, post, errors) }
-
-		m := martini.Classic()
-		switch test.method {
-		case "GET":
-			m.Get(route, Json(BlogPost{}), handler)
-		case "POST":
-			m.Post(route, Json(BlogPost{}), handler)
-		case "PUT":
-			m.Put(route, Json(BlogPost{}), handler)
-		case "DELETE":
-			m.Delete(route, Json(BlogPost{}), handler)
-		}
-
-		req, err := http.NewRequest(test.method, route, strings.NewReader(test.payload))
-		if err != nil {
-			t.Error(err)
-		}
-		m.ServeHTTP(recorder, req)
-	}
+	testJson(t, false)
 }
 
 func TestJsonWithInterface(t *testing.T) {
-	for index, test := range jsonTests {
-		recorder := httptest.NewRecorder()
-		handler := func(post Modeler, errors Errors) {
-			post.Create(test, t, index)
-		}
-
-		m := martini.Classic()
-		switch test.method {
-		case "GET":
-			m.Get(route, Json(BlogPost{}, (*Modeler)(nil)), handler)
-		case "POST":
-			m.Post(route, Json(BlogPost{}, (*Modeler)(nil)), handler)
-		case "PUT":
-			m.Put(route, Json(BlogPost{}, (*Modeler)(nil)), handler)
-		case "DELETE":
-			m.Delete(route, Json(BlogPost{}, (*Modeler)(nil)), handler)
-		}
-
-		req, err := http.NewRequest(test.method, route, strings.NewReader(test.payload))
-		if err != nil {
-			t.Error(err)
-		}
-		m.ServeHTTP(recorder, req)
-	}
+	testJson(t, true)
 }
+
+func TestValidate(t *testing.T) {
+	handlerMustErr := func(errors Errors) {
+		if errors.Count() == 0 {
+			t.Error("Expected at least one error, got 0")
+		}
+	}
+	handlerNoErr := func(errors Errors) {
+		if errors.Count() > 0 {
+			t.Error("Expected no errors, got", errors.Count())
+		}
+	}
+
+	performValidationTest(&BlogPost{"", "...", 0, 0, []int{}}, handlerMustErr, t)
+	performValidationTest(&BlogPost{"Good Title", "Good content", 0, 0, []int{}}, handlerNoErr, t)
+
+	performValidationTest(&User{Name: "Jim", Home: Address{"", ""}}, handlerMustErr, t)
+	performValidationTest(&User{Name: "Jim", Home: Address{"required", ""}}, handlerNoErr, t)
+}
+
+
+
 
 func handle(test testCase, t *testing.T, index int, post BlogPost, errors Errors) {
 	assertEqualField(t, "Title", index, test.ref.Title, post.Title)
@@ -193,29 +115,147 @@ func handle(test testCase, t *testing.T, index int, post BlogPost, errors Errors
 	}
 }
 
+func testBind(t *testing.T, withInterface bool) {
+	index := 0
+	for test, expectStatus := range bindTests {
+		m        := martini.Classic()
+		recorder := httptest.NewRecorder()
+		handler  := func(post BlogPost, errors Errors) { handle(test, t, index, post, errors) }
+		binding  := Bind(BlogPost{})
+		
+		if withInterface {
+			handler = func(post BlogPost, errors Errors) {
+				post.Create(test, t, index)
+			}
+			binding = Bind(BlogPost{}, (*Modeler)(nil))
+		}
+		
+		switch test.method {
+		case "GET":
+			m.Get(route, binding, handler)
+		case "POST":
+			m.Post(route, binding, handler)
+		}
+		
+		req, err := http.NewRequest(test.method, test.path, strings.NewReader(test.payload))
+		req.Header.Add("Content-Type", test.contentType)
+
+		if err != nil {
+			t.Error(err)
+		}
+		m.ServeHTTP(recorder, req)
+
+		if recorder.Code != expectStatus {
+			t.Errorf("On test case %v, got status code %d but expected %d", test, recorder.Code, expectStatus)
+		}
+
+		index++
+	}
+}
+
+func testJson(t *testing.T, withInterface bool) {
+	for index, test := range jsonTests {
+		recorder := httptest.NewRecorder()
+		handler  := func(post BlogPost, errors Errors) { handle(test, t, index, post, errors) }
+		binding  := Json(BlogPost{})
+		
+		if withInterface {
+			handler = func(post BlogPost, errors Errors) {
+				post.Create(test, t, index)
+			}
+			binding = Bind(BlogPost{}, (*Modeler)(nil))
+		}
+		
+
+		m := martini.Classic()
+		switch test.method {
+		case "GET":
+			m.Get(route, binding, handler)
+		case "POST":
+			m.Post(route, binding, handler)
+		case "PUT":
+			m.Put(route, binding, handler)
+		case "DELETE":
+			m.Delete(route, binding, handler)
+		}
+
+		req, err := http.NewRequest(test.method, route, strings.NewReader(test.payload))
+		if err != nil {
+			t.Error(err)
+		}
+		m.ServeHTTP(recorder, req)
+	}
+}
+
+
+func testForm(t *testing.T, withInterface bool) {
+	for index, test := range formTests {
+		recorder := httptest.NewRecorder()
+		handler  := func(post BlogPost, errors Errors) { handle(test, t, index, post, errors) }
+		binding  := Form(BlogPost{})
+		
+		if withInterface {
+			handler = func(post BlogPost, errors Errors) {
+				post.Create(test, t, index)
+			}
+			binding = Form(BlogPost{}, (*Modeler)(nil))
+		}
+		
+
+		m := martini.Classic()
+		switch test.method {
+		case "GET":
+			m.Get(route, binding, handler)
+		case "POST":
+			m.Post(route, binding, handler)
+		}
+
+		req, err := http.NewRequest(test.method, test.path, nil)
+		if err != nil {
+			t.Error(err)
+		}
+		m.ServeHTTP(recorder, req)
+	}
+}
+
+func testMultipart(t *testing.T, test testCase, middleware martini.Handler, handler martini.Handler, index int) *httptest.ResponseRecorder {
+	recorder := httptest.NewRecorder()
+
+	m := martini.Classic()
+	m.Post(route, middleware, handler)
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	writer.WriteField("title", test.ref.Title)
+	writer.WriteField("content", test.ref.Content)
+	writer.WriteField("views", strconv.Itoa(test.ref.Views))
+	if len(test.ref.Multiple) != 0 {
+		for _, value := range test.ref.Multiple {
+			writer.WriteField("multiple", strconv.Itoa(value))
+		}
+	}
+	
+	req, err := http.NewRequest(test.method, test.path, body)
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+	
+	if err != nil {
+		t.Error(err)
+	}
+	
+	err = writer.Close()
+	if err != nil {
+		t.Error(err)
+	}
+	
+	m.ServeHTTP(recorder, req)
+	
+	return recorder
+}
+
 func assertEqualField(t *testing.T, fieldname string, testcasenumber int, expected interface{}, got interface{}) {
 	if expected != got {
 		t.Errorf("%s: expected=%s, got=%s in test case %d\n", fieldname, expected, got, testcasenumber)
 	}
-}
-
-func TestValidate(t *testing.T) {
-	handlerMustErr := func(errors Errors) {
-		if errors.Count() == 0 {
-			t.Error("Expected at least one error, got 0")
-		}
-	}
-	handlerNoErr := func(errors Errors) {
-		if errors.Count() > 0 {
-			t.Error("Expected no errors, got", errors.Count())
-		}
-	}
-
-	performValidationTest(&BlogPost{"", "...", 0, 0, []int{}}, handlerMustErr, t)
-	performValidationTest(&BlogPost{"Good Title", "Good content", 0, 0, []int{}}, handlerNoErr, t)
-
-	performValidationTest(&User{Name: "Jim", Home: Address{"", ""}}, handlerMustErr, t)
-	performValidationTest(&User{Name: "Jim", Home: Address{"required", ""}}, handlerNoErr, t)
 }
 
 func performValidationTest(data interface{}, handler func(Errors), t *testing.T) {
@@ -230,6 +270,7 @@ func performValidationTest(data interface{}, handler func(Errors), t *testing.T)
 
 	m.ServeHTTP(recorder, req)
 }
+
 
 func (self BlogPost) Validate(errors *Errors, req *http.Request) {
 	if len(self.Title) < 4 {
@@ -316,8 +357,8 @@ var (
 		testCase{
 			"POST",
 			path,
-			`not URL-encoded but has content-type`,
-			"x-www-form-urlencoded",
+			`not multipart but has content-type`,
+			"multipart/form-data",
 			false,
 			new(BlogPost),
 		}: http.StatusBadRequest,
@@ -332,13 +373,21 @@ var (
 
 		// These should deserialize, then bail at the validation phase
 		testCase{
+			"POST",
+			path + "?title= This is wrong  ",
+			`not URL-encoded but has content-type`,
+			"x-www-form-urlencoded",
+			false,
+			new(BlogPost),
+		}: 422, // according to comments in Form() -> although the request is not url encoded, ParseForm does not complain
+		testCase{
 			"GET",
 			path + "?content=This+is+the+content",
 			``,
 			"x-www-form-urlencoded",
 			false,
 			&BlogPost{Title: "", Content: "This is the content"},
-		}: http.StatusBadRequest,
+		}: 422,
 		testCase{
 			"GET",
 			path + "",
@@ -346,7 +395,7 @@ var (
 			"application/json",
 			false,
 			&BlogPost{Title: "Blog Post Title", Content: ""},
-		}: http.StatusBadRequest,
+		}: 422,
 
 		// These should succeed
 		testCase{
@@ -359,7 +408,7 @@ var (
 		}: http.StatusOK,
 		testCase{
 			"GET",
-			path + "?content=This is the content&title=Blog+Post+Title",
+			path + "?content=This+is+the+content&title=Blog+Post+Title",
 			``,
 			"",
 			true,
@@ -383,6 +432,27 @@ var (
 		}: http.StatusOK,
 	}
 	
+	bindMultipartTests = map[testCase]int{
+		// This should deserialize, then bail at the validation phase
+		testCase{
+			"POST",
+			path,
+			"",
+			"multipart/form-data",
+			false,
+			&BlogPost{Title: "", Content: "This is the content"},
+		}: 422,
+		// This should succeed
+		testCase{
+			"POST",
+			path,
+			"",
+			"multipart/form-data",
+			true,
+			&BlogPost{Title: "This is the Title", Content: "This is the content"},
+		}: http.StatusOK,
+	}
+
 	formTests = []testCase{
 		{
 			"GET",
@@ -394,7 +464,7 @@ var (
 		},
 		{
 			"POST",
-			path + "?content=This is the content&title=Blog+Post+Title&views=3",
+			path + "?content=This+is+the+content&title=Blog+Post+Title&views=3",
 			"",
 			"",
 			false, // false because POST requests should have a body, not just a query string
@@ -402,9 +472,36 @@ var (
 		},
 		{
 			"GET",
-			path + "?content=This is the content&title=Blog+Post+Title&views=3&multiple=5&multiple=10&multiple=15&multiple=20",
+			path + "?content=This+is+the+content&title=Blog+Post+Title&views=3&multiple=5&multiple=10&multiple=15&multiple=20",
 			"",
 			"",
+			true,
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Views: 3, Multiple: []int{5, 10, 15, 20}},
+		},
+	}
+	
+	multipartformTests = []testCase{
+		{
+			"POST",
+			path,
+			"",
+			"multipart/form-data",
+			false,
+			&BlogPost{Title: "", Content: "This is the content"},
+		},
+		{
+			"POST",
+			path,
+			"",
+			"multipart/form-data",
+			false,
+			&BlogPost{Title: "Blog Post Title", Views: 3},
+		},
+		{
+			"POST",
+			path,
+			"",
+			"multipart/form-data",
 			true,
 			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Views: 3, Multiple: []int{5, 10, 15, 20}},
 		},
