@@ -27,16 +27,21 @@ session as authenticated.
 Your user type should meet the login.User interface:
 
 ```go
-   type User interface {
-       // Return whether this user is logged in or not
-       IsAuthenticated() bool
+    type User interface {
+        // Return whether this user is logged in or not
+        IsAuthenticated() bool
 
-       // Set any flags or extra data that should be available
-       // for a logged in user
-       Login()
+        // Set any flags or extra data that should be available
+        Login()
 
-       // Clear any sensitive data out of the user
-       Logout()
+        // Clear any sensitive data out of the user
+        Logout()
+
+        // Return the unique identifier of this user object
+        UniqueId() interface{}
+
+        // Populate this user object with values
+        GetById(id interface{}) error
    }
 ```
 
@@ -45,8 +50,8 @@ into your route handlers. These interfaces must be converted to your
 appropriate type to function correctly.
 
 ```go
-   func handler(user login.User, db *MyDB) {
-       u := user.(*UserModel)
-       db.Save(u)
-   }
+    func handler(user login.User, db *MyDB) {
+        u := user.(*UserModel)
+        db.Save(u)
+    }
 ```

@@ -1,6 +1,6 @@
 # Contributed Martini Handlers and Utilities [![wercker status](https://app.wercker.com/status/6e73d91b3a2bdb85a74cd61d380248d7 "wercker status")](https://app.wercker.com/project/bykey/6e73d91b3a2bdb85a74cd61d380248d7)
 
-This package includes a variety of add-on components for Martini, a classy web framework for Go:
+This package includes a variety of add-on components for [Martini][], a classy web framework for Go:
 
 Install all the packages (**go 1.1** and greater is required):
 ~~~
@@ -27,3 +27,5 @@ Feel free to submit patches or file issues via GitHub. If you have an idea for a
 
 ### Be a Collaborator
 If you want to be a maintainer of martini-contrib and get full repo access contact [Jeremy Saenz](http://github.com/codegangsta). I will automatically add you as a collaborator if you contribute a package yourself so you can fix bugs without a pull request.
+
+[Martini]: http://martini.codegangsta.io/
