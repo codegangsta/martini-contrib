@@ -347,7 +347,6 @@ var (
 )
 
 const (
-	FormEncodingError    string = "FormEncodingError"
 	RequireError         string = "Required"
 	DeserializationError string = "DeserializationError"
 	IntegerTypeError     string = "IntegerTypeError"
