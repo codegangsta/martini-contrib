@@ -12,7 +12,7 @@ import (
 func Test_AllowAll(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	m := martini.New()
-	m.Use(Allow(&Opts{
+	m.Use(Allow(&Options{
 		AllowAllOrigins: true,
 	}))
 
@@ -27,7 +27,7 @@ func Test_AllowAll(t *testing.T) {
 func Test_AllowRegexMatch(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	m := martini.New()
-	m.Use(Allow(&Opts{
+	m.Use(Allow(&Options{
 		AllowOrigins: []string{"https://aaa.com", "https://foo\\.*"},
 	}))
 
@@ -45,7 +45,7 @@ func Test_AllowRegexMatch(t *testing.T) {
 func Test_AllowRegexNoMatch(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	m := martini.New()
-	m.Use(Allow(&Opts{
+	m.Use(Allow(&Options{
 		AllowOrigins: []string{"https://foo\\.*"},
 	}))
 
@@ -63,7 +63,7 @@ func Test_AllowRegexNoMatch(t *testing.T) {
 func Test_OtherHeaders(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	m := martini.New()
-	m.Use(Allow(&Opts{
+	m.Use(Allow(&Options{
 		AllowAllOrigins:  true,
 		AllowCredentials: true,
 		AllowMethods:     []string{"PATCH", "GET"},
@@ -99,7 +99,7 @@ func Test_OtherHeaders(t *testing.T) {
 func Test_Preflight(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	m := martini.New()
-	m.Use(Allow(&Opts{
+	m.Use(Allow(&Options{
 		AllowAllOrigins: true,
 		AllowMethods:    []string{"PUT", "PATCH"},
 		AllowHeaders:    []string{"Origin", "X-whatever"},
@@ -136,7 +136,7 @@ func Benchmark_WithoutCORS(b *testing.B) {
 func Benchmark_WithCORS(b *testing.B) {
 	recorder := httptest.NewRecorder()
 	m := martini.New()
-	m.Use(Allow(&Opts{
+	m.Use(Allow(&Options{
 		AllowAllOrigins:  true,
 		AllowCredentials: true,
 		AllowMethods:     []string{"PATCH", "GET"},

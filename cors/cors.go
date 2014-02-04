@@ -21,7 +21,7 @@ const (
 )
 
 // Represents Access Control options.
-type Opts struct {
+type Options struct {
 	// If set, all origins are allowed.
 	AllowAllOrigins bool
 	// A list of allowed domain patterns.
@@ -37,7 +37,7 @@ type Opts struct {
 }
 
 // Converts options into CORS headers.
-func (o *Opts) Header(origin string) (headers map[string]string) {
+func (o *Options) Header(origin string) (headers map[string]string) {
 	headers = make(map[string]string)
 	// if origin is not alowed, don't extend the headers
 	// with CORS headers.
@@ -73,7 +73,7 @@ func (o *Opts) Header(origin string) (headers map[string]string) {
 }
 
 // Converts options into CORS headers for a preflight response.
-func (o *Opts) PreflightHeader(origin, rMethod, rHeaders string) (headers map[string]string) {
+func (o *Options) PreflightHeader(origin, rMethod, rHeaders string) (headers map[string]string) {
 	headers = make(map[string]string)
 	if !o.AllowAllOrigins && !o.IsOriginAllowed(origin) {
 		return
@@ -109,8 +109,8 @@ func (o *Opts) PreflightHeader(origin, rMethod, rHeaders string) (headers map[st
 }
 
 // Looks up if the origin matches one of the patterns
-// provided in Opts.AllowOrigins patterns.
-func (o *Opts) IsOriginAllowed(origin string) (allowed bool) {
+// provided in Options.AllowOrigins patterns.
+func (o *Options) IsOriginAllowed(origin string) (allowed bool) {
 	for _, pattern := range o.AllowOrigins {
 		allowed, _ = regexp.MatchString(pattern, origin)
 		if allowed {
@@ -121,7 +121,7 @@ func (o *Opts) IsOriginAllowed(origin string) (allowed bool) {
 }
 
 // Allows CORS for requests those match the provided options.
-func Allow(opts *Opts) http.HandlerFunc {
+func Allow(opts *Options) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		var (
 			origin           = req.Header.Get(headerOrigin)
