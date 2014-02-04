@@ -13,6 +13,7 @@ Join the [Mailing list](https://groups.google.com/forum/#!forum/martini-go)
 * [acceptlang](https://github.com/codegangsta/martini-contrib/tree/master/acceptlang) - Handler for parsing the `Accept-Language` HTTP header.
 * [auth](https://github.com/codegangsta/martini-contrib/tree/master/auth) - Handlers for authentication.
 * [binding](https://github.com/codegangsta/martini-contrib/tree/master/binding) - Handler for mapping/validating a raw request into a structure.
+* [cors](https://github.com/codegangsta/martini-contrib/tree/master/cors) - Handler to enable CORS support.
 * [encoder](https://github.com/codegangsta/martini-contrib/tree/master/encoder) - Encoder service for rendering data in several formats and content negotiation.
 * [gzip](https://github.com/codegangsta/martini-contrib/tree/master/gzip) - Handler for adding gzip compress to requests
 * [method](https://github.com/codegangsta/martini-contrib/tree/master/method) - HTTP method overriding via Header or form fields.
