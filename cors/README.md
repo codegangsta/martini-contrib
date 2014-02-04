@@ -16,7 +16,7 @@ func main() {
   // - PUT and PATCH methods
   // - Origin header
   // - Credentials share
-  m.Use(cors.Allow(&cors.Opts{
+  m.Use(cors.Allow(&cors.Options{
     AllowOrigins: []string{"https://foo\\.*"},
     AllowMethods: []string{"PUT", "PATCH"},
     AllowHeaders: []string{"Origin"},
