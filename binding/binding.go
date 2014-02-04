@@ -28,18 +28,22 @@ import (
 // if no Content-Type is specified. Bind invokes the ErrorHandler
 // middleware to bail out if errors occurred. If you want to perform
 // your own error handling, use Form or Json middleware directly.
-func Bind(obj interface{}) martini.Handler {
+// An interface pointer can be added as a second argument in order
+// to map the struct to a specific interface.
+func Bind(obj interface{}, ifacePtrArgs ...interface{}) martini.Handler {
+	ifacePtr := extractIfacePtr(ifacePtrArgs)
+	
 	return func(context martini.Context, req *http.Request) {
 		contentType := req.Header.Get("Content-Type")
 
 		if strings.Contains(contentType, "form-urlencoded") {
-			context.Invoke(Form(obj))
+			context.Invoke(Form(obj, ifacePtr))
 		} else if strings.Contains(contentType, "json") {
-			context.Invoke(Json(obj))
+			context.Invoke(Json(obj, ifacePtr))
 		} else {
-			context.Invoke(Json(obj))
+			context.Invoke(Json(obj, ifacePtr))
 			if getErrors(context).Count() > 0 {
-				context.Invoke(Form(obj))
+				context.Invoke(Form(obj, ifacePtr))
 			}
 		}
 
@@ -54,7 +58,11 @@ func Bind(obj interface{}) martini.Handler {
 // into the struct with the proper type. Structs with primitive slice types
 // (bool, float, int, string) can support deserialization of repeated form
 // keys, for example: key=val1&key=val2&key=val3
-func Form(formStruct interface{}) martini.Handler {
+// An interface pointer can be added as a second argument in order
+// to map the struct to a specific interface.
+func Form(formStruct interface{}, ifacePtrArgs ...interface{}) martini.Handler {
+	ifacePtr := extractIfacePtr(ifacePtrArgs)
+	
 	return func(context martini.Context, req *http.Request) {
 		ensureNotPointer(formStruct)
 		formStruct := reflect.New(reflect.TypeOf(formStruct))
@@ -94,14 +102,18 @@ func Form(formStruct interface{}) martini.Handler {
 			}
 		}
 
-		validateAndMap(formStruct, context, errors)
+		validateAndMap(formStruct, ifacePtr, context, errors)
 	}
 }
 
 // Json is middleware to deserialize a JSON payload from the request
 // into the struct that is passed in. The resulting struct is then
 // validated, but no error handling is actually performed here.
-func Json(jsonStruct interface{}) martini.Handler {
+// An interface pointer can be added as a second argument in order
+// to map the struct to a specific interface.
+func Json(jsonStruct interface{}, ifacePtrArgs ...interface{}) martini.Handler {
+	ifacePtr := extractIfacePtr(ifacePtrArgs)
+	
 	return func(context martini.Context, req *http.Request) {
 		ensureNotPointer(jsonStruct)
 		jsonStruct := reflect.New(reflect.TypeOf(jsonStruct))
@@ -115,7 +127,7 @@ func Json(jsonStruct interface{}) martini.Handler {
 			errors.Overall[DeserializationError] = err.Error()
 		}
 
-		validateAndMap(jsonStruct, context, errors)
+		validateAndMap(jsonStruct, ifacePtr, context, errors)
 	}
 }
 
@@ -248,11 +260,14 @@ func ensureNotPointer(obj interface{}) {
 // Performs validation and combines errors from validation
 // with errors from deserialization, then maps both the
 // resulting struct and the errors to the context.
-func validateAndMap(obj reflect.Value, context martini.Context, errors *Errors) {
+func validateAndMap(obj reflect.Value, ifacePtr interface{}, context martini.Context, errors *Errors) {
 	context.Invoke(Validate(obj.Interface()))
 	errors.combine(getErrors(context))
 	context.Map(*errors)
 	context.Map(obj.Elem().Interface())
+	if ifacePtr != nil {
+		context.MapTo(obj.Elem().Interface(), ifacePtr)
+	}
 }
 
 func newErrors() *Errors {
@@ -273,6 +288,17 @@ func (this *Errors) combine(other Errors) {
 		if _, exists := this.Overall[key]; !exists {
 			this.Overall[key] = val
 		}
+	}
+}
+
+func extractIfacePtr(ifacePtrArgs []interface{}) (interface{}) {
+	switch len(ifacePtrArgs) {
+	case 1:
+		return ifacePtrArgs[0]
+	case 0:
+		return (interface{})(nil)
+	default:
+		panic("Expected at most 1 interface pointer, but got" + strconv.Itoa(len(ifacePtrArgs)))
 	}
 }
 
