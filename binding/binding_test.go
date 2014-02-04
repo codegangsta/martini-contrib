@@ -289,7 +289,7 @@ var (
 		},
 		{
 			"GET",
-			path + "?content=This is the content&title=Blog+Post+Title&views=3&multiple=5&multiple=10&multiple=15&multiple=20",
+			path + "?content=This is the content&title=Blog+Post+Title&views=3&multiple.0=5&multiple.1=10&multiple.2=15&multiple.3=20",
 			"",
 			"",
 			true,
