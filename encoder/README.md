@@ -21,7 +21,7 @@ It's pretty straightforward:
 ```go
 m.Use(func(c martini.Context, w http.ResponseWriter) {
 	c.MapTo(encoder.JsonEncoder{}, (*encoder.Encoder)(nil))
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 })
 ```
 
@@ -49,7 +49,7 @@ func main() {
 	// map json encoder
 	m.Use(func(c martini.Context, w http.ResponseWriter) {
 		c.MapTo(encoder.JsonEncoder{}, (*encoder.Encoder)(nil))
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	})
 
 	route.Get("/test", func(enc encoder.Encoder) (int, []byte) {
