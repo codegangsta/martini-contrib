@@ -92,6 +92,9 @@ func handle(test testCase, t *testing.T, index int, post BlogPost, errors Errors
 	assertEqualField(t, "Content", index, test.ref.Content, post.Content)
 	assertEqualField(t, "Views", index, test.ref.Views, post.Views)
 
+	assertEqualField(t, "Author", index, test.ref.Author, post.Author)
+	assertEqualField(t, "Subject", index, test.ref.Subject, post.Subject)
+
 	for i := range test.ref.Multiple {
 		if i >= len(post.Multiple) {
 			t.Errorf("Expected: %v (size %d) to have same size as: %v (size %d)", post.Multiple, len(post.Multiple), test.ref.Multiple, len(test.ref.Multiple))
@@ -128,8 +131,8 @@ func TestValidate(t *testing.T) {
 		}
 	}
 
-	performValidationTest(&BlogPost{"", "...", 0, 0, []int{}}, handlerMustErr, t)
-	performValidationTest(&BlogPost{"Good Title", "Good content", 0, 0, []int{}}, handlerNoErr, t)
+	performValidationTest(&BlogPost{"", "...", 0, 0, []int{}, BlogPostEmbedded{}}, handlerMustErr, t)
+	performValidationTest(&BlogPost{"Good Title", "Good content", 0, 0, []int{}, BlogPostEmbedded{}}, handlerNoErr, t)
 
 	performValidationTest(&User{Name: "Jim", Home: Address{"", ""}}, handlerMustErr, t)
 	performValidationTest(&User{Name: "Jim", Home: Address{"required", ""}}, handlerNoErr, t)
@@ -176,6 +179,12 @@ type (
 		Views    int    `form:"views" json:"views"`
 		internal int    `form:"-"`
 		Multiple []int  `form:"multiple"`
+		BlogPostEmbedded
+	}
+
+	BlogPostEmbedded struct {
+		Author  string `form:"author" json:"author"`
+		Subject string `form:"subject" json:"subject"`
 	}
 
 	User struct {
@@ -294,6 +303,14 @@ var (
 			"",
 			true,
 			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Views: 3, Multiple: []int{5, 10, 15, 20}},
+		},
+		{
+			"GET",
+			path + "?content=This is the content&title=Blog+Post+Title&subject=a subject&author=anonymous",
+			"",
+			"",
+			true,
+			&BlogPost{Title: "Blog Post Title", Content: "This is the content", BlogPostEmbedded: BlogPostEmbedded{Subject: "a subject", Author: "anonymous"}},
 		},
 	}
 
