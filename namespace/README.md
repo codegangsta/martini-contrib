@@ -33,7 +33,7 @@ func main() {
 	m := martini.Classic()
 
 	// simple usage: install an admin namespace by using namespace.Namespace
-	namespace.Namespace(m, "/admin", func(n *namespace.MartiniNamespace) string {
+	namespace.Namespace(m, "/admin", func(n *namespace.MartiniNamespace) {
 		n.Get("/blog/index", func() (int, string) {
       return 200, "Hello, ", + n.Namespace + "/blog/index!"
     })
@@ -42,7 +42,7 @@ func main() {
 	// advanced usage: use handlers in the whole namespace - the handlers you pass to namespace
 	// will be passed down to the created routes and installed before any additional handlers.
 	// Keeps your Martini nice & DRY.
-	namespace.Namespace(m, "/users", binding.Bind(User{}), func(n *namespace.MartiniNamespace) string {
+	namespace.Namespace(m, "/users", binding.Bind(User{}), func(n *namespace.MartiniNamespace) {
 		n.Post("/create", func() (int, string) {
       return 200, "Hello, /admin/blog/index!"
     })
