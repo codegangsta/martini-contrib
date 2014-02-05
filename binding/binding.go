@@ -29,22 +29,20 @@ import (
 // your own error handling, use Form or Json middleware directly.
 // An interface pointer can be added as a second argument in order
 // to map the struct to a specific interface.
-func Bind(obj interface{}, ifacePtrArgs ...interface{}) martini.Handler {
-	ifacePtr := extractIfacePtr(ifacePtrArgs)
-	
+func Bind(obj interface{}, ifacePtr ...interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
 		contentType := req.Header.Get("Content-Type")
 
 		if strings.Contains(contentType, "form-urlencoded") {
-			context.Invoke(Form(obj))
+			context.Invoke(Form(obj, ifacePtr...))
 		} else if strings.Contains(contentType, "multipart/form-data") {
-			context.Invoke(MultipartForm(obj, ifacePtr))
+			context.Invoke(MultipartForm(obj, ifacePtr...))
 		} else if strings.Contains(contentType, "json") {
-			context.Invoke(Json(obj, ifacePtr))
+			context.Invoke(Json(obj, ifacePtr...))
 		} else {
-			context.Invoke(Json(obj, ifacePtr))
+			context.Invoke(Json(obj, ifacePtr...))
 			if getErrors(context).Count() > 0 {
-				context.Invoke(Form(obj, ifacePtr))
+				context.Invoke(Form(obj, ifacePtr...))
 			}
 		}
 
@@ -61,9 +59,7 @@ func Bind(obj interface{}, ifacePtrArgs ...interface{}) martini.Handler {
 // keys, for example: key=val1&key=val2&key=val3
 // An interface pointer can be added as a second argument in order
 // to map the struct to a specific interface.
-func Form(formStruct interface{}, ifacePtrArgs ...interface{}) martini.Handler {
-	ifacePtr := extractIfacePtr(ifacePtrArgs)
-	
+func Form(formStruct interface{}, ifacePtr ...interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
 		ensureNotPointer(formStruct)
 		formStruct := reflect.New(reflect.TypeOf(formStruct))
@@ -80,13 +76,11 @@ func Form(formStruct interface{}, ifacePtrArgs ...interface{}) martini.Handler {
 
 		mapForm(formStruct, req.Form, errors)
 		
-		validateAndMap(formStruct, ifacePtr, context, errors)
+		validateAndMap(formStruct, context, errors, ifacePtr...)
 	}
 }
 
-func MultipartForm(formStruct interface{}, ifacePtrArgs ...interface{}) martini.Handler {
-	ifacePtr := extractIfacePtr(ifacePtrArgs)
-	
+func MultipartForm(formStruct interface{}, ifacePtr ...interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
 		ensureNotPointer(formStruct)
 		formStruct := reflect.New(reflect.TypeOf(formStruct))
@@ -110,7 +104,7 @@ func MultipartForm(formStruct interface{}, ifacePtrArgs ...interface{}) martini.
 
 		mapForm(formStruct, req.MultipartForm.Value, errors)
 
-		validateAndMap(formStruct, ifacePtr, context, errors)
+		validateAndMap(formStruct, context, errors, ifacePtr...)
 	}
 }
 
@@ -119,9 +113,7 @@ func MultipartForm(formStruct interface{}, ifacePtrArgs ...interface{}) martini.
 // validated, but no error handling is actually performed here.
 // An interface pointer can be added as a second argument in order
 // to map the struct to a specific interface.
-func Json(jsonStruct interface{}, ifacePtrArgs ...interface{}) martini.Handler {
-	ifacePtr := extractIfacePtr(ifacePtrArgs)
-	
+func Json(jsonStruct interface{}, ifacePtr ...interface{}) martini.Handler {
 	return func(context martini.Context, req *http.Request) {
 		ensureNotPointer(jsonStruct)
 		jsonStruct := reflect.New(reflect.TypeOf(jsonStruct))
@@ -135,7 +127,7 @@ func Json(jsonStruct interface{}, ifacePtrArgs ...interface{}) martini.Handler {
 			errors.Overall[DeserializationError] = err.Error()
 		}
 
-		validateAndMap(jsonStruct, ifacePtr, context, errors)
+		validateAndMap(jsonStruct, context, errors, ifacePtr...)
 	}
 }
 
@@ -304,13 +296,13 @@ func ensureNotPointer(obj interface{}) {
 // Performs validation and combines errors from validation
 // with errors from deserialization, then maps both the
 // resulting struct and the errors to the context.
-func validateAndMap(obj reflect.Value, ifacePtr interface{}, context martini.Context, errors *Errors) {
+func validateAndMap(obj reflect.Value, context martini.Context, errors *Errors, ifacePtr ...interface{}) {
 	context.Invoke(Validate(obj.Interface()))
 	errors.combine(getErrors(context))
 	context.Map(*errors)
 	context.Map(obj.Elem().Interface())
-	if ifacePtr != nil {
-		context.MapTo(obj.Elem().Interface(), ifacePtr)
+	if len(ifacePtr) > 0 {
+		context.MapTo(obj.Elem().Interface(), ifacePtr[0])
 	}
 }
 
@@ -332,17 +324,6 @@ func (this *Errors) combine(other Errors) {
 		if _, exists := this.Overall[key]; !exists {
 			this.Overall[key] = val
 		}
-	}
-}
-
-func extractIfacePtr(ifacePtrArgs []interface{}) (interface{}) {
-	switch len(ifacePtrArgs) {
-	case 1:
-		return ifacePtrArgs[0]
-	case 0:
-		return (interface{})(nil)
-	default:
-		panic("Expected at most 1 interface pointer, but got" + strconv.Itoa(len(ifacePtrArgs)))
 	}
 }
 
