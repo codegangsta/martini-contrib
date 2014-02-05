@@ -4,11 +4,11 @@ package binding
 
 import (
 	"encoding/json"
+	"github.com/codegangsta/martini"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
-	"github.com/codegangsta/martini"
 )
 
 /*
@@ -75,7 +75,7 @@ func Form(formStruct interface{}, ifacePtr ...interface{}) martini.Handler {
 		}
 
 		mapForm(formStruct, req.Form, errors)
-		
+
 		validateAndMap(formStruct, context, errors, ifacePtr...)
 	}
 }
@@ -85,7 +85,7 @@ func MultipartForm(formStruct interface{}, ifacePtr ...interface{}) martini.Hand
 		ensureNotPointer(formStruct)
 		formStruct := reflect.New(reflect.TypeOf(formStruct))
 		errors := newErrors()
-		
+
 		// Workaround for multipart forms returning nil instead of an error
 		// when content is not multipart
 		// https://code.google.com/p/go/issues/detail?id=6334
@@ -94,11 +94,11 @@ func MultipartForm(formStruct interface{}, ifacePtr ...interface{}) martini.Hand
 			errors.Overall[DeserializationError] = err.Error()
 		} else {
 			form, parseErr := multipartReader.ReadForm(MaxMemory)
-				
+
 			if parseErr != nil {
 				errors.Overall[DeserializationError] = parseErr.Error()
 			}
-						
+
 			req.MultipartForm = form
 		}
 
@@ -190,7 +190,7 @@ func mapForm(formStruct reflect.Value, form map[string][]string, errors *Errors)
 			}
 
 			inputValue, exists := form[inputFieldName]
-			
+
 			if !exists {
 				continue
 			}

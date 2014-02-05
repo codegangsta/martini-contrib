@@ -1,13 +1,13 @@
 package binding
 
 import (
+	"bytes"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"strconv"
+	"strings"
 	"testing"
-	"mime/multipart"
-	"bytes"
 
 	"github.com/codegangsta/martini"
 )
@@ -27,11 +27,11 @@ func TestMultipartBind(t *testing.T) {
 			handle(test, t, index, post, errors)
 		}
 		recorder := testMultipart(t, test, Bind(BlogPost{}), handler, index)
-		
+
 		if recorder.Code != expectStatus {
 			t.Errorf("On test case %v, got status code %d but expected %d", test, recorder.Code, expectStatus)
 		}
-		
+
 		index++
 	}
 }
@@ -89,9 +89,6 @@ func TestValidate(t *testing.T) {
 	performValidationTest(&User{Name: "Jim", Home: Address{"required", ""}}, handlerNoErr, t)
 }
 
-
-
-
 func handle(test testCase, t *testing.T, index int, post BlogPost, errors Errors) {
 	assertEqualField(t, "Title", index, test.ref.Title, post.Title)
 	assertEqualField(t, "Content", index, test.ref.Content, post.Content)
@@ -118,25 +115,25 @@ func handle(test testCase, t *testing.T, index int, post BlogPost, errors Errors
 func testBind(t *testing.T, withInterface bool) {
 	index := 0
 	for test, expectStatus := range bindTests {
-		m        := martini.Classic()
+		m := martini.Classic()
 		recorder := httptest.NewRecorder()
-		handler  := func(post BlogPost, errors Errors) { handle(test, t, index, post, errors) }
-		binding  := Bind(BlogPost{})
-		
+		handler := func(post BlogPost, errors Errors) { handle(test, t, index, post, errors) }
+		binding := Bind(BlogPost{})
+
 		if withInterface {
 			handler = func(post BlogPost, errors Errors) {
 				post.Create(test, t, index)
 			}
 			binding = Bind(BlogPost{}, (*Modeler)(nil))
 		}
-		
+
 		switch test.method {
 		case "GET":
 			m.Get(route, binding, handler)
 		case "POST":
 			m.Post(route, binding, handler)
 		}
-		
+
 		req, err := http.NewRequest(test.method, test.path, strings.NewReader(test.payload))
 		req.Header.Add("Content-Type", test.contentType)
 
@@ -156,16 +153,15 @@ func testBind(t *testing.T, withInterface bool) {
 func testJson(t *testing.T, withInterface bool) {
 	for index, test := range jsonTests {
 		recorder := httptest.NewRecorder()
-		handler  := func(post BlogPost, errors Errors) { handle(test, t, index, post, errors) }
-		binding  := Json(BlogPost{})
-		
+		handler := func(post BlogPost, errors Errors) { handle(test, t, index, post, errors) }
+		binding := Json(BlogPost{})
+
 		if withInterface {
 			handler = func(post BlogPost, errors Errors) {
 				post.Create(test, t, index)
 			}
 			binding = Bind(BlogPost{}, (*Modeler)(nil))
 		}
-		
 
 		m := martini.Classic()
 		switch test.method {
@@ -187,20 +183,18 @@ func testJson(t *testing.T, withInterface bool) {
 	}
 }
 
-
 func testForm(t *testing.T, withInterface bool) {
 	for index, test := range formTests {
 		recorder := httptest.NewRecorder()
-		handler  := func(post BlogPost, errors Errors) { handle(test, t, index, post, errors) }
-		binding  := Form(BlogPost{})
-		
+		handler := func(post BlogPost, errors Errors) { handle(test, t, index, post, errors) }
+		binding := Form(BlogPost{})
+
 		if withInterface {
 			handler = func(post BlogPost, errors Errors) {
 				post.Create(test, t, index)
 			}
 			binding = Form(BlogPost{}, (*Modeler)(nil))
 		}
-		
 
 		m := martini.Classic()
 		switch test.method {
@@ -234,21 +228,21 @@ func testMultipart(t *testing.T, test testCase, middleware martini.Handler, hand
 			writer.WriteField("multiple", strconv.Itoa(value))
 		}
 	}
-	
+
 	req, err := http.NewRequest(test.method, test.path, body)
 	req.Header.Add("Content-Type", writer.FormDataContentType())
-	
+
 	if err != nil {
 		t.Error(err)
 	}
-	
+
 	err = writer.Close()
 	if err != nil {
 		t.Error(err)
 	}
-	
+
 	m.ServeHTTP(recorder, req)
-	
+
 	return recorder
 }
 
@@ -270,7 +264,6 @@ func performValidationTest(data interface{}, handler func(Errors), t *testing.T)
 
 	m.ServeHTTP(recorder, req)
 }
-
 
 func (self BlogPost) Validate(errors *Errors, req *http.Request) {
 	if len(self.Title) < 4 {
@@ -314,7 +307,7 @@ type (
 		ok          bool
 		ref         *BlogPost
 	}
-	
+
 	Modeler interface {
 		Create(test testCase, t *testing.T, index int)
 	}
@@ -326,10 +319,10 @@ type (
 		internal int    `form:"-"`
 		Multiple []int  `form:"multiple"`
 	}
-	
+
 	BlogSection struct {
-		Title    string `form:"title" json:"title" binding:"required"`
-		Content  string `form:"content" json:"content"`
+		Title   string `form:"title" json:"title" binding:"required"`
+		Content string `form:"content" json:"content"`
 	}
 
 	User struct {
@@ -431,7 +424,7 @@ var (
 			&BlogPost{Title: "Blog Post Title", Content: "This is the content"},
 		}: http.StatusOK,
 	}
-	
+
 	bindMultipartTests = map[testCase]int{
 		// This should deserialize, then bail at the validation phase
 		testCase{
@@ -479,7 +472,7 @@ var (
 			&BlogPost{Title: "Blog Post Title", Content: "This is the content", Views: 3, Multiple: []int{5, 10, 15, 20}},
 		},
 	}
-	
+
 	multipartformTests = []testCase{
 		{
 			"POST",
