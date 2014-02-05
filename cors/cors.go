@@ -13,6 +13,7 @@ const (
 	headerAllowCredentials = "Access-Control-Allow-Credentials"
 	headerAllowHeaders     = "Access-Control-Allow-Headers"
 	headerAllowMethods     = "Access-Control-Allow-Methods"
+	headerExposeHeaders    = "Access-Control-Expose-Headers"
 	headerMaxAge           = "Access-Control-Max-Age"
 
 	headerOrigin         = "Origin"
@@ -32,6 +33,8 @@ type Options struct {
 	AllowMethods []string
 	// A list of allowed HTTP headers.
 	AllowHeaders []string
+	// A list of exposed HTTP headers.
+	ExposeHeaders []string
 	// Max age of the CORS headers.
 	MaxAge time.Duration
 }
@@ -64,6 +67,11 @@ func (o *Options) Header(origin string) (headers map[string]string) {
 	if len(o.AllowHeaders) > 0 {
 		// TODO: Add default headers
 		headers[headerAllowHeaders] = strings.Join(o.AllowHeaders, ",")
+	}
+
+	// add exposed header
+	if len(o.ExposeHeaders) > 0 {
+		headers[headerExposeHeaders] = strings.Join(o.ExposeHeaders, ",")
 	}
 	// add a max age header
 	if o.MaxAge > time.Duration(0) {
@@ -98,8 +106,15 @@ func (o *Options) PreflightHeader(origin, rMethod, rHeaders string) (headers map
 			}
 		}
 	}
+
+	// add allowed headers
 	if len(allowed) > 0 {
 		headers[headerAllowHeaders] = strings.Join(allowed, ",")
+	}
+
+	// add exposed headers
+	if len(o.ExposeHeaders) > 0 {
+		headers[headerExposeHeaders] = strings.Join(o.ExposeHeaders, ",")
 	}
 	// add a max age header
 	if o.MaxAge > time.Duration(0) {
