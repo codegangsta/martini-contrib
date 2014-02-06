@@ -54,25 +54,24 @@ func main() {
 	m.Use(render.Renderer())
 	m.Use(sessions.Sessions("my_session", store))
 	m.Use(sessionauth.SessionUser(GenerateAnonymousUser))
-	// XXX uncomment after final merge.
-	//sessionauth.RedirectUrl = "/new-login"
-	//sessionauth.RedirectParam = "new-next"
+	sessionauth.RedirectUrl = "/new-login"
+	sessionauth.RedirectParam = "new-next"
 
 	m.Get("/", func(r render.Render) {
 		r.HTML(200, "index", nil)
 	})
 
-	m.Get("/login", func(r render.Render) {
+	m.Get("/new-login", func(r render.Render) {
 		r.HTML(200, "login", nil)
 	})
 
-	m.Post("/login", binding.Bind(MyUserModel{}), func(session sessions.Session, postedUser MyUserModel, r render.Render, req *http.Request) {
+	m.Post("/new-login", binding.Bind(MyUserModel{}), func(session sessions.Session, postedUser MyUserModel, r render.Render, req *http.Request) {
 		// You should verify credentials against a database or some other mechanism at this point.
 		// Then you can authenticate this session.
 		user := MyUserModel{}
 		err := dbmap.SelectOne(&user, "SELECT * FROM users WHERE username = $1 and password = $2", postedUser.Username, postedUser.Password)
 		if err != nil {
-			r.Redirect("/login")
+			r.Redirect(sessionauth.RedirectUrl)
 			return
 		} else {
 			err := sessionauth.AuthenticateSession(session, &user)
@@ -81,8 +80,7 @@ func main() {
 			}
 
 			params := req.URL.Query()
-			//redirect := params.Get("new-next")
-			redirect := params.Get("next")
+			redirect := params.Get(sessionauth.RedirectParam)
 			r.Redirect(redirect)
 			return
 		}
