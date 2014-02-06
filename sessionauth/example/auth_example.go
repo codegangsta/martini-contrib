@@ -8,10 +8,10 @@ import (
 	"github.com/codegangsta/martini"
 	"github.com/codegangsta/martini-contrib/binding"
 	"github.com/codegangsta/martini-contrib/render"
+	"github.com/codegangsta/martini-contrib/sessionauth"
 	"github.com/codegangsta/martini-contrib/sessions"
 	"github.com/coopernurse/gorp"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/codegangsta/martini-contrib/sessionauth"
 	"log"
 	"net/http"
 	"os"
@@ -54,6 +54,9 @@ func main() {
 	m.Use(render.Renderer())
 	m.Use(sessions.Sessions("my_session", store))
 	m.Use(sessionauth.SessionUser(GenerateAnonymousUser))
+	// XXX uncomment after final merge.
+	//sessionauth.RedirectUrl = "/new-login"
+	//sessionauth.RedirectParam = "new-next"
 
 	m.Get("/", func(r render.Render) {
 		r.HTML(200, "index", nil)
@@ -78,6 +81,7 @@ func main() {
 			}
 
 			params := req.URL.Query()
+			//redirect := params.Get("new-next")
 			redirect := params.Get("next")
 			r.Redirect(redirect)
 			return
