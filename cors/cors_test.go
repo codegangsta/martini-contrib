@@ -68,7 +68,7 @@ func Test_OtherHeaders(t *testing.T) {
 		AllowCredentials: true,
 		AllowMethods:     []string{"PATCH", "GET"},
 		AllowHeaders:     []string{"Origin", "X-whatever"},
-		ExposeHeaders:    []string{"Content-Length"},
+		ExposeHeaders:    []string{"Content-Length", "Hello"},
 		MaxAge:           5 * time.Minute,
 	}))
 
@@ -93,8 +93,8 @@ func Test_OtherHeaders(t *testing.T) {
 		t.Errorf("Allow-Headers is expected to be Origin,X-whatever; found %v", headersVal)
 	}
 
-	if exposedHeadersVal != "Content-Length" {
-		t.Errorf("Expose-Headers are expected to be Content-Length, found %v", exposedHeadersVal)
+	if exposedHeadersVal != "Content-Length,Hello" {
+		t.Errorf("Expose-Headers are expected to be Content-Length,Hello. Found %v", exposedHeadersVal)
 	}
 
 	if maxAgeVal != "300" {
