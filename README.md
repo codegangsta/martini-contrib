@@ -11,6 +11,7 @@ Join the [Mailing list](https://groups.google.com/forum/#!forum/martini-go)
 
 ## Available Components
 * [acceptlang](https://github.com/codegangsta/martini-contrib/tree/master/acceptlang) - Handler for parsing the `Accept-Language` HTTP header.
+* [access-flags](https://github.com/codegangsta/martini-contrib/tree/master/access-flags) - Handler to enable Access Control.
 * [auth](https://github.com/codegangsta/martini-contrib/tree/master/auth) - Handlers for authentication.
 * [binding](https://github.com/codegangsta/martini-contrib/tree/master/binding) - Handler for mapping/validating a raw request into a structure.
 * [cors](https://github.com/codegangsta/martini-contrib/tree/master/cors) - Handler to enable CORS support.
