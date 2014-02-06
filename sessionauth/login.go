@@ -12,6 +12,10 @@ import (
 	"net/http"
 )
 
+const (
+	authUniqueId = "AUTHUNIQUEID"
+)
+
 // User defines all the functions necessary to work with the user's authentication.
 // The caller should implement these functions for whatever system of authentication
 // they choose to use
@@ -40,7 +44,7 @@ type User interface {
 // user type.
 func SessionUser(newUser func() User) martini.Handler {
 	return func(s sessions.Session, c martini.Context, l *log.Logger) {
-		userId := s.Get("AUTHUNIQUEID")
+		userId := s.Get(authUniqueId)
 		user := newUser()
 
 		if userId != nil {
@@ -67,7 +71,7 @@ func AuthenticateSession(s sessions.Session, user User) error {
 // Logout will clear out the session and call the Logout() user function.
 func Logout(s sessions.Session, user User) {
 	user.Logout()
-	s.Delete("AUTHUNIQUEID")
+	s.Delete(authUniqueId)
 }
 
 // LoginRequired verifies that the current user is authenticated. Any routes that
@@ -84,6 +88,6 @@ func LoginRequired(r render.Render, user User, req *http.Request) {
 // UpdateUser updates the User object stored in the session. This is useful incase a change
 // is made to the user model that needs to persist across requests.
 func UpdateUser(s sessions.Session, user User) error {
-	s.Set("AUTHUNIQUEID", user.UniqueId())
+	s.Set(authUniqueId, user.UniqueId())
 	return nil
 }
