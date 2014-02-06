@@ -68,6 +68,7 @@ func Test_OtherHeaders(t *testing.T) {
 		AllowCredentials: true,
 		AllowMethods:     []string{"PATCH", "GET"},
 		AllowHeaders:     []string{"Origin", "X-whatever"},
+		ExposeHeaders:    []string{"Content-Length", "Hello"},
 		MaxAge:           5 * time.Minute,
 	}))
 
@@ -77,6 +78,7 @@ func Test_OtherHeaders(t *testing.T) {
 	credentialsVal := recorder.HeaderMap.Get(headerAllowCredentials)
 	methodsVal := recorder.HeaderMap.Get(headerAllowMethods)
 	headersVal := recorder.HeaderMap.Get(headerAllowHeaders)
+	exposedHeadersVal := recorder.HeaderMap.Get(headerExposeHeaders)
 	maxAgeVal := recorder.HeaderMap.Get(headerMaxAge)
 
 	if credentialsVal != "true" {
@@ -89,6 +91,10 @@ func Test_OtherHeaders(t *testing.T) {
 
 	if headersVal != "Origin,X-whatever" {
 		t.Errorf("Allow-Headers is expected to be Origin,X-whatever; found %v", headersVal)
+	}
+
+	if exposedHeadersVal != "Content-Length,Hello" {
+		t.Errorf("Expose-Headers are expected to be Content-Length,Hello. Found %v", exposedHeadersVal)
 	}
 
 	if maxAgeVal != "300" {
