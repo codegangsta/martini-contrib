@@ -30,9 +30,8 @@ type Options struct {
 	RedirectURL  string
 	Scopes       []string
 
-	AuthUrl    string
-	TokenUrl   string
-	RequestUrl string
+	AuthUrl  string
+	TokenUrl string
 }
 
 type Tokens interface {
@@ -67,7 +66,12 @@ func (t *token) String() string {
 func Google(opts *Options) martini.Handler {
 	opts.AuthUrl = "https://accounts.google.com/o/oauth2/auth"
 	opts.TokenUrl = "https://accounts.google.com/o/oauth2/token"
-	opts.RequestUrl = "https://www.googleapis.com/oauth2/v1/userinfo"
+	return OAuth2Provider(opts)
+}
+
+func Github(opts *Options) martini.Handler {
+	opts.AuthUrl = "https://github.com/login/oauth/authorize"
+	opts.TokenUrl = "https://github.com/login/oa­uth­/ac­ces­s_token"
 	return OAuth2Provider(opts)
 }
 
@@ -105,11 +109,12 @@ func OAuth2Provider(opts *Options) martini.Handler {
 func login(t *oauth.Transport, s sessions.Session, w http.ResponseWriter, r *http.Request) {
 	next := r.URL.Query().Get(keyNextPage)
 	if s.Get(keyToken) == nil {
-		// user is not logged in
+		// User is not logged in.
+		fmt.Println(t.Config.AuthCodeURL(next))
 		http.Redirect(w, r, t.Config.AuthCodeURL(next), 302)
 		return
 	}
-	// no need to login, redirect to the next page
+	// No need to login, redirect to the next page.
 	http.Redirect(w, r, next, 302)
 }
 
