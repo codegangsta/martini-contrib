@@ -15,10 +15,12 @@ import (
 const (
 	keyToken    = "oauth2_token"
 	keyNextPage = "next"
+)
 
-	pathLogin    = "/login"
-	pathLogout   = "/logout"
-	pathCallback = "/oauth2callback"
+var (
+	PathLogin    = "/login"
+	PathLogout   = "/logout"
+	PathCallback = "/oauth2callback"
 )
 
 // Represents OAuth2 backend options.
@@ -87,11 +89,11 @@ func OAuth2Provider(opts *Options) martini.Handler {
 	return func(s sessions.Session, c martini.Context, w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			switch r.URL.Path {
-			case pathLogin:
+			case PathLogin:
 				login(transport, s, w, r)
-			case pathLogout:
+			case PathLogout:
 				logout(transport, s, w, r)
-			case pathCallback:
+			case PathCallback:
 				handleOAuth2Callback(transport, s, w, r)
 			}
 		}
