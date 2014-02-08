@@ -18,8 +18,12 @@ const (
 )
 
 var (
-	PathLogin    = "/login"
-	PathLogout   = "/logout"
+	// Path to handle OAuth 2.0 logins.
+	PathLogin = "/login"
+	// Path to handle OAuth 2.0 logouts.
+	PathLogout = "/logout"
+	// Path to handle callback from OAuth 2.0 backend
+	// to exchange credentials.
 	PathCallback = "/oauth2callback"
 	// Path to handle error cases.
 	PathError = "/oauth2error"
@@ -36,47 +40,60 @@ type Options struct {
 	TokenUrl string
 }
 
+// Represents a container that contains
+// user's OAuth 2.0 access and refresh tokens.
 type Tokens interface {
 	AccessToken() string
 	RefreshToken() string
+	Expiry() time.Time
 }
 
 type token struct {
 	tk *oauth.Token
 }
 
+// Returns the access token.
 func (t *token) AccessToken() string {
 	return t.tk.AccessToken
 }
 
+// Returns the refresh token.
 func (t *token) RefreshToken() string {
 	return t.tk.RefreshToken
 }
 
+// Returns whether the access token is
+// expired or not.
 func (t *token) Expired() bool {
 	return t.tk.Expired()
 }
 
+// Returns the expiry time of the user's
+// access token.
 func (t *token) Expiry() time.Time {
 	return t.tk.Expiry
 }
 
+// Formats tokens into string.
 func (t *token) String() string {
 	return fmt.Sprintf("%v", t.tk)
 }
 
+// Returns a new Google OAuth 2.0 backend endpoint.
 func Google(opts *Options) martini.Handler {
 	opts.AuthUrl = "https://accounts.google.com/o/oauth2/auth"
 	opts.TokenUrl = "https://accounts.google.com/o/oauth2/token"
 	return OAuth2Provider(opts)
 }
 
+// Returns a new Github OAuth 2.0 backend endpoint.
 func Github(opts *Options) martini.Handler {
 	opts.AuthUrl = "https://github.com/login/oauth/authorize"
 	opts.TokenUrl = "https://github.com/login/oa­uth­/ac­ces­s_token"
 	return OAuth2Provider(opts)
 }
 
+// Returns a generic OAuth 2.0 backend endpoint.
 func OAuth2Provider(opts *Options) martini.Handler {
 	config := &oauth.Config{
 		ClientId:     opts.ClientId,
