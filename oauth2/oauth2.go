@@ -21,6 +21,8 @@ var (
 	PathLogin    = "/login"
 	PathLogout   = "/logout"
 	PathCallback = "/oauth2callback"
+	// Path to handle error cases.
+	PathError = "/oauth2error"
 )
 
 // Represents OAuth2 backend options.
@@ -127,8 +129,13 @@ func logout(t *oauth.Transport, s sessions.Session, w http.ResponseWriter, r *ht
 func handleOAuth2Callback(t *oauth.Transport, s sessions.Session, w http.ResponseWriter, r *http.Request) {
 	next := r.URL.Query().Get("state")
 	code := r.URL.Query().Get("code")
-	tk, _ := t.Exchange(code)
-	// TODO: handle error
+	tk, err := t.Exchange(code)
+	if err != nil {
+		// Pass the error message, or allow dev to provide its own
+		// error handler.
+		http.Redirect(w, r, PathError, 302)
+		return
+	}
 	// Store the credentials in the session.
 	val, _ := json.Marshal(tk)
 	s.Set(keyToken, val)
