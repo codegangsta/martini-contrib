@@ -57,15 +57,13 @@ func Form(formStruct interface{}) martini.Handler {
 		formStruct := reflect.New(reflect.TypeOf(formStruct))
 		errors := newErrors()
 
+		if err := req.ParseMultipartForm(MaxMemory); err != nil {
+			errors.Overall[DeserializationError] = err.Error()
+		}
 		if err := form.DecodeValues(formStruct.Interface(), req.URL.Query()); err != nil {
 			errors.Overall[DeserializationError] = err.Error()
 		}
-
-		if req.Body != nil {
-			defer req.Body.Close()
-		}
-
-		if err := form.NewDecoder(req.Body).Decode(formStruct.Interface()); err != nil {
+		if err := form.DecodeValues(formStruct.Interface(), req.Form); err != nil {
 			errors.Overall[DeserializationError] = err.Error()
 		}
 
