@@ -1,3 +1,5 @@
+// Package oauth2 contains Martini handlers to provide
+// user login via an OAuth 2.0 backend.
 package oauth2
 
 import (
