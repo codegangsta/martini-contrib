@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	keyToken    = "oauth2_token"
-	keyNextPage = "next"
+	codeRedirect = 302
+	keyToken     = "oauth2_token"
+	keyNextPage  = "next"
 )
 
 var (
@@ -129,17 +130,17 @@ func login(t *oauth.Transport, s sessions.Session, w http.ResponseWriter, r *htt
 	next := r.URL.Query().Get(keyNextPage)
 	if s.Get(keyToken) == nil {
 		// User is not logged in.
-		http.Redirect(w, r, t.Config.AuthCodeURL(next), 302)
+		http.Redirect(w, r, t.Config.AuthCodeURL(next), codeRedirect)
 		return
 	}
 	// No need to login, redirect to the next page.
-	http.Redirect(w, r, next, 302)
+	http.Redirect(w, r, next, codeRedirect)
 }
 
 func logout(t *oauth.Transport, s sessions.Session, w http.ResponseWriter, r *http.Request) {
 	next := r.URL.Query().Get(keyNextPage)
 	s.Delete(keyToken)
-	http.Redirect(w, r, next, 302)
+	http.Redirect(w, r, next, codeRedirect)
 }
 
 func handleOAuth2Callback(t *oauth.Transport, s sessions.Session, w http.ResponseWriter, r *http.Request) {
@@ -149,13 +150,13 @@ func handleOAuth2Callback(t *oauth.Transport, s sessions.Session, w http.Respons
 	if err != nil {
 		// Pass the error message, or allow dev to provide its own
 		// error handler.
-		http.Redirect(w, r, PathError, 302)
+		http.Redirect(w, r, PathError, codeRedirect)
 		return
 	}
 	// Store the credentials in the session.
 	val, _ := json.Marshal(tk)
 	s.Set(keyToken, val)
-	http.Redirect(w, r, next, 302)
+	http.Redirect(w, r, next, codeRedirect)
 }
 
 func unmarshallToken(s sessions.Session) (t *token) {
