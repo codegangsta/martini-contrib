@@ -1,3 +1,4 @@
+// Package cors provides handlers to enable CORS support.
 package cors
 
 import (
