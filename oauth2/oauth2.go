@@ -129,7 +129,6 @@ func login(t *oauth.Transport, s sessions.Session, w http.ResponseWriter, r *htt
 	next := r.URL.Query().Get(keyNextPage)
 	if s.Get(keyToken) == nil {
 		// User is not logged in.
-		fmt.Println(t.Config.AuthCodeURL(next))
 		http.Redirect(w, r, t.Config.AuthCodeURL(next), 302)
 		return
 	}
